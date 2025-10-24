@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Pertokoan</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -15,9 +16,10 @@
         }
         
         body {
-            background-color: #f5f7fa;
-            color: #333;
+            background-color: #8a0303;
+            color: #f5f5f5;
             display: flex;
+            min-height: 100vh;
         }
         
         /* Sidebar Styles */
@@ -32,6 +34,8 @@
             transition: transform 0.3s ease;
             z-index: 1000;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            display: none;
         }
         
         .sidebar.hidden {
@@ -66,11 +70,63 @@
             text-align: center;
         }
         
+        /* Tambahan style untuk sidebar export buttons */
+        .sidebar-export-buttons {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 10px;
+        }
+        
+        .sidebar-export-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .sidebar-export-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .sidebar-export-btn i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-export-section {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-export-section h4 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
         /* Main Content */
         .main-content {
             flex: 1;
-            margin-left: 250px;
+            margin-left: 0;
             transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .main-content.with-sidebar {
+            margin-left: 250px;
         }
         
         .main-content.expanded {
@@ -81,6 +137,8 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            flex: 1;
+            width: 100%;
         }
         
         /* Header Styles */
@@ -107,6 +165,7 @@
             cursor: pointer;
             font-size: 16px;
             transition: all 0.3s ease;
+            display: none;
         }
         
         .menu-toggle:hover {
@@ -146,6 +205,7 @@
             justify-content: center;
             gap: 10px;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
         
         .nav-btn {
@@ -156,6 +216,7 @@
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-bottom: 5px;
         }
         
         .nav-btn:hover, .nav-btn.active {
@@ -171,6 +232,7 @@
             padding: 25px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             animation: fadeIn 0.5s ease-in-out;
+            width: 100%;
         }
         
         @keyframes fadeIn {
@@ -264,6 +326,7 @@
         .table-container {
             overflow-x: auto;
             margin-top: 20px;
+            width: 100%;
         }
         
         table {
@@ -273,6 +336,7 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-width: 600px;
         }
         
         th, td {
@@ -331,6 +395,7 @@
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            width: 100%;
         }
         
         .stats-grid {
@@ -387,6 +452,7 @@
         .chart-container {
             height: 300px;
             margin-top: 20px;
+            width: 100%;
         }
         
         /* Login Screen */
@@ -396,6 +462,7 @@
             align-items: center;
             height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 100%;
         }
         
         .login-card {
@@ -422,10 +489,12 @@
         .form-row {
             display: flex;
             gap: 15px;
+            flex-wrap: wrap;
         }
         
         .form-row .form-group {
             flex: 1;
+            min-width: 200px;
         }
         
         .mt-4 {
@@ -435,17 +504,20 @@
         .action-buttons {
             display: flex;
             gap: 5px;
+            flex-wrap: wrap;
         }
         
         .supplier-container {
             display: flex;
             gap: 10px;
             align-items: flex-end;
+            flex-wrap: wrap;
         }
         
         .supplier-container .form-group {
             flex: 1;
             margin-bottom: 0;
+            min-width: 200px;
         }
         
         .supplier-container .btn {
@@ -475,6 +547,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
         
         .editable-field input {
@@ -504,6 +577,109 @@
             background: #fff3cd;
             color: #856404;
         }
+        
+        /* Search Box */
+        .search-box {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 100%;
+        }
+        
+        /* Dark Mode */
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        body.dark-mode .card,
+        body.dark-mode .tab-content {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+        
+        body.dark-mode table {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+        
+        body.dark-mode th {
+            background-color: #3d3d3d;
+            color: #ffffff;
+        }
+        
+        body.dark-mode input,
+        body.dark-mode select,
+        body.dark-mode textarea {
+            background-color: #3d3d3d;
+            color: #ffffff;
+            border-color: #555;
+        }
+        
+        body.dark-mode .sidebar {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+        
+        body.dark-mode header {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.hidden {
+                transform: translateX(0);
+            }
+            
+            .main-content.with-sidebar {
+                margin-left: 0;
+            }
+            
+            .main-content.expanded {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .form-row .form-group {
+                min-width: 100%;
+            }
+            
+            .supplier-container {
+                flex-direction: column;
+            }
+            
+            .supplier-container .form-group {
+                min-width: 100%;
+            }
+            
+            .user-info {
+                position: static;
+                justify-content: center;
+                margin-top: 10px;
+            }
+            
+            nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -523,8 +699,8 @@
         </div>
     </div>
 
-    <!-- Sidebar Menu -->
-    <div id="sidebar" class="sidebar">
+    <!-- Sidebar Menu - Awalnya disembunyikan -->
+    <div id="sidebar" class="sidebar hidden">
         <div class="sidebar-header">
             <h2><i class="fas fa-store"></i> TokoKu</h2>
             <p>Sistem Manajemen</p>
@@ -554,10 +730,40 @@
                 <i class="fas fa-users"></i>
                 <span>Manajemen User</span>
             </div>
+            
+            <!-- Export/Import Section di Sidebar -->
+            <div class="sidebar-export-buttons">
+                <!-- Dark Mode Button - Tersedia untuk semua user -->
+                <button class="sidebar-export-btn" onclick="toggleDarkMode()">
+                    <i class="fas fa-moon"></i>
+                    <span>Mode Gelap</span>
+                </button>
+                
+                <!-- Excel Export - Tersedia untuk semua user -->
+                <button class="sidebar-export-btn" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel"></i>
+                    <span>Export Excel</span>
+                </button>
+                
+                <!-- Section khusus untuk Owner -->
+                <div id="ownerExportSection" class="sidebar-export-section hidden">
+                    <h4>Admin Tools</h4>
+                    <button class="sidebar-export-btn" onclick="exportData()">
+                        <i class="fas fa-download"></i>
+                        <span>Export JSON</span>
+                    </button>
+                    
+                    <label for="importFile" class="sidebar-export-btn" style="cursor: pointer; margin-bottom: 0;">
+                        <i class="fas fa-upload"></i>
+                        <span>Import Data</span>
+                    </label>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Main Application -->
+    <!-- Main Application - Awalnya disembunyikan -->
     <div id="app" class="main-content" style="display: none;">
         <div class="container">
             <header>
@@ -567,6 +773,7 @@
                 <h1><i class="fas fa-store"></i> Aplikasi Pertokoan</h1>
                 <p>Sistem Manajemen Toko Terintegrasi</p>
                 <div class="user-info">
+                    <!-- Tombol di header hanya untuk logout dan info user -->
                     <span id="currentUser">User</span>
                     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
@@ -643,6 +850,7 @@
                 
                 <div class="card">
                     <h3>Daftar Supplier</h3>
+                    <input type="text" class="search-box" placeholder="Cari supplier..." oninput="searchTable('supplierTable', this.value)">
                     <div class="table-container">
                         <table id="supplierTable">
                             <thead>
@@ -661,6 +869,7 @@
                 
                 <div class="card">
                     <h3>Purchase Orders Aktif</h3>
+                    <input type="text" class="search-box" placeholder="Cari PO..." oninput="searchTable('poTable', this.value)">
                     <div class="table-container">
                         <table id="poTable">
                             <thead>
@@ -748,6 +957,7 @@
                 
                 <div class="card">
                     <h3>Stok Produk</h3>
+                    <input type="text" class="search-box" placeholder="Cari produk..." oninput="searchTable('stockTable', this.value)">
                     <div class="table-container">
                         <table id="stockTable">
                             <thead>
@@ -828,6 +1038,7 @@
                 
                 <div class="card">
                     <h3>Riwayat Penjualan</h3>
+                    <input type="text" class="search-box" placeholder="Cari penjualan..." oninput="searchTable('salesTable', this.value)">
                     <div class="table-container">
                         <table id="salesTable">
                             <thead>
@@ -1133,6 +1344,7 @@
                 
                 <div class="card">
                     <h3>Daftar User</h3>
+                    <input type="text" class="search-box" placeholder="Cari user..." oninput="searchTable('usersTable', this.value)">
                     <div class="table-container">
                         <table id="usersTable">
                             <thead>
@@ -1165,13 +1377,16 @@
         let expenseRecords = [];
         let utilityRecords = [];
         let suppliers = [];
-        let users = []; // Data baru untuk user management
+        let users = [];
         
         // Current transaction items
         let currentTransactionItems = [];
         
         // Current user
         let currentUser = null;
+
+        // Auto-refresh system
+        let autoRefreshInterval;
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -1180,18 +1395,24 @@
             
             // Load sample data for demonstration
             loadSampleData();
-            updateAllStats();
-            initializeCharts();
-            populateProductSelect();
-            updatePoSelect();
-            updateSupplierSelect();
-            updateUsersTable();
             
-            // Set up form event listeners
+            // Setup form event listeners
             setupFormListeners();
+            
+            // Setup real-time data monitoring
+            setupRealtimeListeners();
+            
+            // Load saved data
+            loadAutoSave();
+            
+            // Handle responsive design
+            handleResize();
+            
+            // Load dark mode preference
+            loadDarkModePreference();
         });
 
-        // Setup form event listeners - menambahkan userForm
+        // Setup form event listeners
         function setupFormListeners() {
             // Income form
             document.getElementById('incomeForm').addEventListener('submit', function(e) {
@@ -1214,8 +1435,8 @@
                     description: description
                 });
                 
-                updateFinanceStats();
-                updateFinanceChart();
+                // Update all related components
+                updateAllStats();
                 
                 // Reset form
                 this.reset();
@@ -1243,8 +1464,8 @@
                     description: description
                 });
                 
-                updateFinanceStats();
-                updateFinanceChart();
+                // Update all related components
+                updateAllStats();
                 
                 // Reset form
                 this.reset();
@@ -1274,8 +1495,8 @@
                     description: description
                 });
                 
-                updateFinanceStats();
-                updateFinanceChart();
+                // Update all related components
+                updateAllStats();
                 
                 // Reset form
                 this.reset();
@@ -1306,7 +1527,6 @@
                     if (!suppliers.includes(supplier)) {
                         suppliers.push(supplier);
                         updateSupplierSelect();
-                        updateSupplierTable();
                     }
                 } else {
                     supplier = supplierSelect.value;
@@ -1333,10 +1553,9 @@
                 };
                 
                 purchaseOrders.push(po);
-                updatePoTable();
-                updatePoSelect();
-                updatePurchaseStats();
-                updateSupplierTable();
+                
+                // Update all related components
+                updateAllStats();
                 
                 // Reset form
                 this.reset();
@@ -1366,7 +1585,7 @@
                     return;
                 }
                 
-                const buyPrice = po.price; // Use the price from PO
+                const buyPrice = po.price;
                 
                 // Find product in inventory
                 const productIndex = inventory.findIndex(item => item.name.toLowerCase() === receivedProduct.toLowerCase());
@@ -1392,18 +1611,15 @@
                         name: receivedProduct,
                         stock: receivedQuantity,
                         buyPrice: buyPrice,
-                        sellPrice: newSellPrice || (buyPrice * 1.3) // Default 30% markup if not provided
+                        sellPrice: newSellPrice || (buyPrice * 1.3)
                     });
                 }
                 
                 // Update PO status
                 po.status = 'completed';
                 
-                updateStockTable();
-                updatePoTable();
-                updatePoSelect();
-                updateInventoryStats();
-                populateProductSelect();
+                // Update all related components
+                updateAllStats();
                 
                 // Reset form
                 this.reset();
@@ -1445,9 +1661,11 @@
                 // Update stock
                 product.stock -= soldQuantity;
                 
+                // Update related components
                 updateStockTable();
-                populateProductSelect(); // Refresh product dropdown
+                populateProductSelect();
                 updateTransactionDetails();
+                updateInventoryStats();
                 
                 // Reset form
                 document.getElementById('soldQuantity').value = '';
@@ -1499,8 +1717,8 @@
                     status: 'active'
                 });
                 
-                updateUsersTable();
-                updateUserStats();
+                // Update all related components
+                updateAllStats();
                 
                 // Reset form
                 this.reset();
@@ -1508,7 +1726,38 @@
             });
         }
 
-        // Load sample data for demonstration - menambahkan sample users
+        // Setup real-time data monitoring
+        function setupRealtimeListeners() {
+            // Override array methods to trigger updates
+            const arraysToMonitor = [purchaseOrders, inventory, salesTransactions, incomeRecords, expenseRecords, utilityRecords, suppliers, users];
+            
+            arraysToMonitor.forEach(array => {
+                const originalPush = array.push;
+                const originalSplice = array.splice;
+                
+                array.push = function(...items) {
+                    const result = originalPush.apply(this, items);
+                    triggerDataUpdate();
+                    return result;
+                };
+                
+                array.splice = function(...args) {
+                    const result = originalSplice.apply(this, args);
+                    triggerDataUpdate();
+                    return result;
+                };
+            });
+        }
+
+        function triggerDataUpdate() {
+            // Update all stats and components
+            updateAllStats();
+            
+            // Auto-save data
+            autoSave();
+        }
+
+        // Load sample data for demonstration
         function loadSampleData() {
             // Sample suppliers
             suppliers = [
@@ -1559,13 +1808,6 @@
                 { id: 2, fullName: 'Kasir Toko', username: 'kasir', password: 'kasir123', role: 'kasir', status: 'active' },
                 { id: 3, fullName: 'Manager Toko', username: 'manager', password: 'manager123', role: 'manager', status: 'active' }
             ];
-            
-            // Update tables
-            updateStockTable();
-            updatePoTable();
-            updateSalesTable();
-            updateSupplierTable();
-            updateUsersTable();
         }
 
         // Toggle sidebar
@@ -1607,23 +1849,32 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
             
+            // Show sidebar after login
+            const sidebar = document.getElementById('sidebar');
+            sidebar.style.display = 'block';
+            sidebar.classList.remove('hidden');
+            
+            // Add margin to main content
+            const mainContent = document.querySelector('.main-content');
+            mainContent.classList.add('with-sidebar');
+            
+            // Show menu toggle button
+            document.querySelector('.menu-toggle').style.display = 'block';
+            
             // Set up UI based on user role
             setupUserInterface();
+            
+            // Initialize data after login
+            updateAllStats();
+            initializeCharts();
+            
+            // Start auto-refresh
+            startAutoRefresh();
             
             showNotification(`Login sebagai ${user.fullName} berhasil`);
         }
 
-        // Logout function
-        function logout() {
-            currentUser = null;
-            document.getElementById('app').style.display = 'none';
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            showNotification('Logout berhasil');
-        }
-
-        // Setup UI based on user role
+        // Setup UI based on user role - MODIFIKASI: Menambahkan kontrol untuk export/import
         function setupUserInterface() {
             const purchaseBtn = document.getElementById('purchaseBtn');
             const inventoryBtn = document.getElementById('inventoryBtn');
@@ -1634,6 +1885,9 @@
             // Show/hide action column in sales table based on user role
             const salesActionHeader = document.getElementById('salesActionHeader');
             
+            // Kontrol untuk section export/import di sidebar
+            const ownerExportSection = document.getElementById('ownerExportSection');
+            
             // Hide all tabs first
             purchaseBtn.style.display = 'none';
             inventoryBtn.style.display = 'none';
@@ -1641,11 +1895,17 @@
             profitBtn.style.display = 'none';
             usersBtn.style.display = 'none';
             
+            // Hide owner export section by default
+            ownerExportSection.classList.add('hidden');
+            
             // Show tabs based on user role
             if (currentUser.role === 'kasir') {
                 // Kasir can only see sales tab
                 salesBtn.style.display = 'inline-block';
                 salesActionHeader.classList.add('hidden');
+                
+                // Kasir tidak bisa akses export/import JSON
+                ownerExportSection.classList.add('hidden');
                 
                 // Show only sales tab
                 showTab('sales');
@@ -1658,6 +1918,9 @@
                 profitBtn.style.display = 'inline-block';
                 usersBtn.style.display = 'inline-block';
                 salesActionHeader.classList.remove('hidden');
+                
+                // Owner bisa akses semua fitur export/import
+                ownerExportSection.classList.remove('hidden');
             } else if (currentUser.role === 'manager') {
                 // Manager can see most tabs but not user management
                 purchaseBtn.style.display = 'inline-block';
@@ -1666,10 +1929,85 @@
                 financeBtn.style.display = 'inline-block';
                 profitBtn.style.display = 'inline-block';
                 salesActionHeader.classList.remove('hidden');
+                
+                // Manager tidak bisa akses export/import JSON
+                ownerExportSection.classList.add('hidden');
             }
         }
 
-        // Tab switching functionality
+        // Logout function
+        function logout() {
+            currentUser = null;
+            
+            // Stop auto-refresh
+            stopAutoRefresh();
+            
+            // Hide app and sidebar, show login screen
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+            
+            // Reset form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            
+            showNotification('Logout berhasil');
+        }
+
+        // Sistem Auto-Refresh untuk Dashboard Realtime
+        function startAutoRefresh() {
+            // Hentikan interval sebelumnya jika ada
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            // Refresh setiap 3 detik
+            autoRefreshInterval = setInterval(() => {
+                const activeTab = document.querySelector('.tab-content.active').id;
+                refreshActiveTab(activeTab);
+            }, 3000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        function refreshActiveTab(tabId) {
+            switch(tabId) {
+                case 'purchase':
+                    updatePurchaseStats();
+                    updatePoTable();
+                    updateSupplierTable();
+                    break;
+                case 'inventory':
+                    updateInventoryStats();
+                    updateStockTable();
+                    break;
+                case 'sales':
+                    updateSalesStats();
+                    updateSalesTable();
+                    updateTransactionDetails();
+                    break;
+                case 'finance':
+                    updateFinanceStats();
+                    updateFinanceChart();
+                    break;
+                case 'profit':
+                    updateProfitStats();
+                    calculateProfit();
+                    updateProfitChart();
+                    break;
+                case 'users':
+                    updateUserStats();
+                    updateUsersTable();
+                    break;
+            }
+        }
+
+        // Tab switching functionality - DIPERBAIKI
         function showTab(tabId) {
             const tabs = document.querySelectorAll('.tab-content');
             const buttons = document.querySelectorAll('.nav-btn');
@@ -1687,201 +2025,9 @@
                 sidebarItem.classList.add('active');
             }
             
-            // Refresh data when switching tabs
-            if (tabId === 'inventory') {
-                updatePoSelect();
-                updateInventoryStats();
-            } else if (tabId === 'sales') {
-                populateProductSelect();
-                updateSalesStats();
-                updateSalesTable(); // Refresh table to show/hide delete buttons
-            } else if (tabId === 'purchase') {
-                updatePurchaseStats();
-                updateSupplierTable();
-            } else if (tabId === 'finance') {
-                updateFinanceStats();
-            } else if (tabId === 'profit') {
-                updateProfitStats();
-                calculateProfit();
-            } else if (tabId === 'users') {
-                updateUserStats();
-            }
+            // Refresh data when switching tabs - DIPERBAIKI
+            refreshActiveTab(tabId);
         }
-
-        // Update users table
-        function updateUsersTable() {
-            const tbody = document.querySelector('#usersTable tbody');
-            tbody.innerHTML = '';
-            
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${user.fullName}</td>
-                    <td>${user.username}</td>
-                    <td><span class="user-role-badge role-${user.role}">${user.role}</span></td>
-                    <td><span class="status-badge ${user.status === 'active' ? 'status-available' : 'status-out'}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary btn-small" onclick="editUser(${user.id})">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="btn btn-danger btn-small" onclick="deleteUser(${user.id})">
-                                <i class="fas fa-trash"></i> Hapus
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // Update user stats
-        function updateUserStats() {
-            const totalUsers = users.length;
-            const activeUsers = users.filter(user => user.status === 'active').length;
-            const adminUsers = users.filter(user => user.role === 'owner').length;
-            
-            document.getElementById('totalUsers').textContent = totalUsers;
-            document.getElementById('activeUsers').textContent = activeUsers;
-            document.getElementById('adminUsers').textContent = adminUsers;
-        }
-
-        // Edit user
-        function editUser(id) {
-            const user = users.find(u => u.id === id);
-            if (user) {
-                const newFullName = prompt(`Edit nama lengkap untuk ${user.username}:`, user.fullName);
-                const newRole = prompt(`Edit role untuk ${user.username} (owner/kasir/manager):`, user.role);
-                const newStatus = prompt(`Edit status untuk ${user.username} (active/inactive):`, user.status);
-                
-                if (newFullName && newRole && newStatus) {
-                    user.fullName = newFullName;
-                    user.role = newRole;
-                    user.status = newStatus;
-                    
-                    updateUsersTable();
-                    updateUserStats();
-                    showNotification(`User ${user.username} berhasil diperbarui`);
-                }
-            }
-        }
-
-        // Delete user
-        function deleteUser(id) {
-            const user = users.find(u => u.id === id);
-            if (user) {
-                // Prevent deleting current user
-                if (currentUser.id === id) {
-                    showNotification('Tidak dapat menghapus user yang sedang login!', true);
-                    return;
-                }
-                
-                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus user ${user.fullName}?`);
-                if (confirmDelete) {
-                    users = users.filter(u => u.id !== id);
-                    updateUsersTable();
-                    updateUserStats();
-                    showNotification(`User ${user.fullName} berhasil dihapus`);
-                }
-            }
-        }
-
-        // Edit cost in profit/loss summary
-        function editCost(costType) {
-            let currentValue = 0;
-            let costName = '';
-            
-            switch(costType) {
-                case 'cogs':
-                    currentValue = getCOGS();
-                    costName = 'Biaya Beli Barang';
-                    break;
-                case 'operational':
-                    currentValue = expenseRecords.filter(exp => exp.type === 'operational').reduce((sum, exp) => sum + exp.amount, 0);
-                    costName = 'Biaya Operasional';
-                    break;
-                case 'salary':
-                    currentValue = getSalaryCost();
-                    costName = 'Biaya Gaji Karyawan';
-                    break;
-                case 'utility':
-                    currentValue = getUtilityCost();
-                    costName = 'Biaya Utilitas';
-                    break;
-                case 'other':
-                    currentValue = expenseRecords.filter(exp => !['purchase', 'operational', 'salary', 'utility'].includes(exp.type)).reduce((sum, exp) => sum + exp.amount, 0);
-                    costName = 'Biaya Lain-lain';
-                    break;
-            }
-            
-            const newValue = prompt(`Edit ${costName}:`, currentValue);
-            
-            if (newValue && !isNaN(newValue)) {
-                const amount = parseFloat(newValue);
-                
-                // Update the corresponding records
-                switch(costType) {
-                    case 'cogs':
-                        // For COGS, we can't directly edit purchase orders, so we'll add an adjustment
-                        expenseRecords.push({
-                            id: Date.now(),
-                            date: new Date(),
-                            type: 'purchase',
-                            amount: amount - currentValue,
-                            description: `Penyesuaian ${costName}`
-                        });
-                        break;
-                    case 'operational':
-                        expenseRecords.push({
-                            id: Date.now(),
-                            date: new Date(),
-                            type: 'operational',
-                            amount: amount - currentValue,
-                            description: `Penyesuaian ${costName}`
-                        });
-                        break;
-                    case 'salary':
-                        expenseRecords.push({
-                            id: Date.now(),
-                            date: new Date(),
-                            type: 'salary',
-                            amount: amount - currentValue,
-                            description: `Penyesuaian ${costName}`
-                        });
-                        break;
-                    case 'utility':
-                        utilityRecords.push({
-                            id: Date.now(),
-                            date: new Date(),
-                            type: 'other',
-                            period: new Date().toISOString().slice(0, 7),
-                            amount: amount - currentValue,
-                            description: `Penyesuaian ${costName}`
-                        });
-                        break;
-                    case 'other':
-                        expenseRecords.push({
-                            id: Date.now(),
-                            date: new Date(),
-                            type: 'other',
-                            amount: amount - currentValue,
-                            description: `Penyesuaian ${costName}`
-                        });
-                        break;
-                }
-                
-                // Recalculate profit
-                calculateProfit();
-                updateFinanceStats();
-                updateFinanceChart();
-                
-                showNotification(`${costName} berhasil diperbarui`);
-            }
-        }
-
-        // ... (fungsi-fungsi lainnya tetap sama seperti sebelumnya)
-        // Untuk menghemat ruang, saya tidak menulis ulang semua fungsi yang tidak berubah
-        // Fungsi-fungsi seperti updateAllStats, updatePurchaseStats, updateInventoryStats, dll tetap sama
 
         // Notification system
         function showNotification(message, isError = false) {
@@ -1896,7 +2042,7 @@
             }, 3000);
         }
 
-        // Update all statistics
+        // Update all statistics - DIPERBAIKI LENGKAP
         function updateAllStats() {
             updatePurchaseStats();
             updateInventoryStats();
@@ -1904,6 +2050,22 @@
             updateFinanceStats();
             updateProfitStats();
             updateUserStats();
+            
+            // Update charts
+            updateFinanceChart();
+            updateProfitChart();
+            
+            // Update tables
+            updatePoTable();
+            updateStockTable();
+            updateSalesTable();
+            updateSupplierTable();
+            updateUsersTable();
+            
+            // Update dropdowns
+            populateProductSelect();
+            updatePoSelect();
+            updateSupplierSelect();
         }
 
         // Purchase stats
@@ -1949,11 +2111,13 @@
             document.getElementById('activeCustomers').textContent = uniqueCustomers;
         }
 
-        // Finance stats
+        // PERBAIKAN: Finance stats - Perhitungan saldo kas yang benar
         function updateFinanceStats() {
             const totalIncome = incomeRecords.reduce((sum, inc) => sum + inc.amount, 0);
             const totalExpense = expenseRecords.reduce((sum, exp) => sum + exp.amount, 0);
             const totalUtility = utilityRecords.reduce((sum, util) => sum + util.amount, 0);
+            
+            // PERBAIKAN: Hitung saldo kas yang benar (Pemasukan - Pengeluaran - Biaya Utilitas)
             const cashBalance = totalIncome - totalExpense - totalUtility;
             
             document.getElementById('cashBalance').textContent = formatCurrency(cashBalance);
@@ -1970,6 +2134,312 @@
             document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
             document.getElementById('totalCost').textContent = formatCurrency(totalCost);
             document.getElementById('netProfit').textContent = formatCurrency(netProfit);
+        }
+
+        // User stats
+        function updateUserStats() {
+            const totalUsers = users.length;
+            const activeUsers = users.filter(user => user.status === 'active').length;
+            const adminUsers = users.filter(user => user.role === 'owner').length;
+            
+            document.getElementById('totalUsers').textContent = totalUsers;
+            document.getElementById('activeUsers').textContent = activeUsers;
+            document.getElementById('adminUsers').textContent = adminUsers;
+        }
+
+        // Table updates
+        function updatePoTable() {
+            const tbody = document.querySelector('#poTable tbody');
+            tbody.innerHTML = '';
+            
+            purchaseOrders.forEach(po => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${po.poNumber}</td>
+                    <td>${formatDate(po.date)}</td>
+                    <td>${po.product}</td>
+                    <td>${po.supplier}</td>
+                    <td>${po.quantity}</td>
+                    <td>${formatCurrency(po.price)}</td>
+                    <td>${formatCurrency(po.total)}</td>
+                    <td><span class="status-badge status-${po.status}">${po.status === 'pending' ? 'Menunggu' : 'Selesai'}</span></td>
+                    <td>
+                        <button class="btn btn-secondary btn-small" onclick="updatePoStatus('${po.poNumber}')">Konfirmasi</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStockTable() {
+            const tbody = document.querySelector('#stockTable tbody');
+            tbody.innerHTML = '';
+            
+            inventory.forEach(item => {
+                const statusClass = item.stock <= 10 ? 'status-out' : (item.stock <= 20 ? 'status-low' : 'status-available');
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.stock}</td>
+                    <td>${formatCurrency(item.buyPrice)}</td>
+                    <td>${formatCurrency(item.sellPrice)}</td>
+                    <td><span class="status-badge ${statusClass}">${getStatusText(statusClass)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary btn-small" onclick="editProduct(${item.id})">Edit</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteProduct(${item.id})">Hapus</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateSalesTable() {
+            const tbody = document.querySelector('#salesTable tbody');
+            tbody.innerHTML = '';
+            
+            salesTransactions.forEach(sale => {
+                const row = document.createElement('tr');
+                
+                // Create base row content
+                let rowContent = `
+                    <td>${formatDate(sale.date)}</td>
+                    <td>${sale.items.map(item => item.product).join(', ')}</td>
+                    <td>${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
+                    <td>${formatCurrency(sale.total)}</td>
+                    <td><span class="status-badge status-completed">Selesai</span></td>
+                `;
+                
+                // Add delete button only for owner
+                if (currentUser && currentUser.role === 'owner') {
+                    rowContent += `<td>
+                        <button class="btn btn-danger btn-small" onclick="deleteSalesTransaction(${sale.id})">Hapus</button>
+                    </td>`;
+                }
+                
+                row.innerHTML = rowContent;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateSupplierTable() {
+            const tbody = document.querySelector('#supplierTable tbody');
+            tbody.innerHTML = '';
+            
+            suppliers.forEach(supplier => {
+                const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier);
+                const totalPOs = supplierPOs.length;
+                const totalValue = supplierPOs.reduce((sum, po) => sum + po.total, 0);
+                const activePOs = supplierPOs.filter(po => po.status === 'pending').length;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${supplier}</td>
+                    <td>${totalPOs}</td>
+                    <td>${formatCurrency(totalValue)}</td>
+                    <td><span class="status-badge ${activePOs > 0 ? 'status-pending' : 'status-completed'}">${activePOs > 0 ? 'Aktif' : 'Selesai'}</span></td>
+                    <td>
+                        <button class="btn btn-danger btn-small" onclick="deleteSupplier('${supplier}')">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateUsersTable() {
+            const tbody = document.querySelector('#usersTable tbody');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.fullName}</td>
+                    <td>${user.username}</td>
+                    <td><span class="user-role-badge role-${user.role}">${user.role}</span></td>
+                    <td><span class="status-badge ${user.status === 'active' ? 'status-available' : 'status-out'}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary btn-small" onclick="editUser(${user.id})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteUser(${user.id})">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Utility functions
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function getStatusText(statusClass) {
+            switch(statusClass) {
+                case 'status-available': return 'Tersedia';
+                case 'status-low': return 'Stok Rendah';
+                case 'status-out': return 'Kosong';
+                default: return 'Tidak Diketahui';
+            }
+        }
+
+        function populateProductSelect() {
+            const select = document.getElementById('soldProduct');
+            select.innerHTML = '<option value="">Pilih Produk</option>';
+            
+            inventory.forEach(item => {
+                if (item.stock > 0) {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = `${item.name} (Stok: ${item.stock}) - ${formatCurrency(item.sellPrice)}`;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        function updatePoSelect() {
+            const select = document.getElementById('poNumber');
+            select.innerHTML = '<option value="">Pilih Nomor PO</option>';
+            
+            purchaseOrders.filter(po => po.status === 'pending').forEach(po => {
+                const option = document.createElement('option');
+                option.value = po.poNumber;
+                option.textContent = `${po.poNumber} - ${po.product}`;
+                select.appendChild(option);
+            });
+        }
+
+        function fillReceivingForm() {
+            const poNumber = document.getElementById('poNumber').value;
+            const po = purchaseOrders.find(p => p.poNumber === poNumber);
+            
+            if (po) {
+                document.getElementById('receivedProduct').value = po.product;
+                document.getElementById('poQuantity').value = po.quantity;
+                document.getElementById('receivedQuantity').value = po.quantity;
+                document.getElementById('poBuyPrice').value = po.price;
+                
+                // Calculate suggested sell price (30% markup)
+                const suggestedSellPrice = po.price * 1.3;
+                document.getElementById('newSellPriceReceiving').value = Math.round(suggestedSellPrice);
+            } else {
+                document.getElementById('receivedProduct').value = '';
+                document.getElementById('poQuantity').value = '';
+                document.getElementById('receivedQuantity').value = '';
+                document.getElementById('poBuyPrice').value = '';
+                document.getElementById('newSellPriceReceiving').value = '';
+            }
+        }
+
+        function updateTransactionDetails() {
+            const container = document.getElementById('transactionDetails');
+            const subtotalEl = document.getElementById('subtotal');
+            const discountEl = document.getElementById('discountAmount');
+            const totalEl = document.getElementById('totalAmount');
+            
+            if (currentTransactionItems.length === 0) {
+                container.innerHTML = '<p>Tidak ada item dalam transaksi saat ini</p>';
+                subtotalEl.textContent = 'Rp 0';
+                discountEl.textContent = 'Rp 0';
+                totalEl.textContent = 'Rp 0';
+                return;
+            }
+            
+            let detailsHtml = '<ul>';
+            currentTransactionItems.forEach(item => {
+                detailsHtml += `<li>${item.quantity} x ${item.product} @ ${formatCurrency(item.price)} = ${formatCurrency(item.total)}</li>`;
+            });
+            detailsHtml += '</ul>';
+            
+            container.innerHTML = detailsHtml;
+            
+            const subtotal = currentTransactionItems.reduce((sum, item) => sum + item.total, 0);
+            const discount = Math.round(subtotal * (document.getElementById('discount').value || 0) / 100);
+            const total = subtotal - discount;
+            
+            subtotalEl.textContent = formatCurrency(subtotal);
+            discountEl.textContent = formatCurrency(discount);
+            totalEl.textContent = formatCurrency(total);
+        }
+
+        // Complete Transaction
+        function completeTransaction() {
+            if (currentTransactionItems.length === 0) {
+                showNotification('Belum ada item di transaksi!', true);
+                return;
+            }
+            
+            const totalAmount = currentTransactionItems.reduce((sum, item) => sum + item.total, 0);
+            
+            const sale = {
+                id: Date.now(),
+                date: new Date(),
+                items: [...currentTransactionItems],
+                total: totalAmount,
+                status: 'completed'
+            };
+            
+            salesTransactions.push(sale);
+            
+            // Add to income records
+            incomeRecords.push({
+                id: Date.now(),
+                date: new Date(),
+                source: 'sales',
+                amount: totalAmount,
+                description: 'Penjualan produk: ' + currentTransactionItems.map(item => item.product).join(', ')
+            });
+            
+            // Clear current transaction
+            currentTransactionItems = [];
+            updateTransactionDetails();
+            
+            // Update all related components
+            updateAllStats();
+            
+            showNotification('Transaksi selesai!');
+        }
+
+        // Clear Transaction
+        function clearTransaction() {
+            if (currentTransactionItems.length === 0) {
+                showNotification('Tidak ada transaksi yang sedang berlangsung!', true);
+                return;
+            }
+            
+            // Restore stock for all items in current transaction
+            currentTransactionItems.forEach(item => {
+                const product = inventory.find(p => p.name === item.product);
+                if (product) {
+                    product.stock += item.quantity;
+                }
+            });
+            
+            currentTransactionItems = [];
+            updateTransactionDetails();
+            
+            // Update related components
+            updateStockTable();
+            populateProductSelect();
+            updateInventoryStats();
+            
+            showNotification('Transaksi dibatalkan');
         }
 
         // Business calculations
@@ -2003,7 +2473,6 @@
             return purchaseOrders.filter(po => po.status === 'pending').reduce((sum, po) => sum + po.total, 0);
         }
 
-        // Calculate profit
         function calculateProfit() {
             const revenue = getTotalRevenue();
             const cogs = getCOGS();
@@ -2052,479 +2521,6 @@
             updateProfitChart();
         }
 
-        // Utility functions
-        function formatDate(date) {
-            return new Date(date).toLocaleDateString('id-ID', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        }
-
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(amount);
-        }
-
-        // ... (setelah fungsi formatCurrency)
-
-        function getStatusText(statusClass) {
-            switch(statusClass) {
-                case 'status-available': return 'Tersedia';
-                case 'status-low': return 'Stok Rendah';
-                case 'status-out': return 'Kosong';
-                default: return 'Tidak Diketahui';
-            }
-        }
-        
-        function populateProductSelect() {
-            const select = document.getElementById('soldProduct');
-            select.innerHTML = '<option value="">Pilih Produk</option>';
-            
-            inventory.forEach(item => {
-                if (item.stock > 0) {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = `${item.name} (Stok: ${item.stock}) - ${formatCurrency(item.sellPrice)}`;
-                    select.appendChild(option);
-                }
-            });
-        }
-        
-        function updatePoSelect() {
-            const select = document.getElementById('poNumber');
-            select.innerHTML = '<option value="">Pilih Nomor PO</option>';
-            
-            purchaseOrders.filter(po => po.status === 'pending').forEach(po => {
-                const option = document.createElement('option');
-                option.value = po.poNumber;
-                option.textContent = `${po.poNumber} - ${po.product}`;
-                select.appendChild(option);
-            });
-        }
-        
-        function fillReceivingForm() {
-            const poNumber = document.getElementById('poNumber').value;
-            const po = purchaseOrders.find(p => p.poNumber === poNumber);
-            
-            if (po) {
-                document.getElementById('receivedProduct').value = po.product;
-                document.getElementById('poQuantity').value = po.quantity;
-                document.getElementById('receivedQuantity').value = po.quantity;
-                document.getElementById('poBuyPrice').value = po.price;
-                
-                // Calculate suggested sell price (30% markup)
-                const suggestedSellPrice = po.price * 1.3;
-                document.getElementById('newSellPriceReceiving').value = Math.round(suggestedSellPrice);
-            } else {
-                document.getElementById('receivedProduct').value = '';
-                document.getElementById('poQuantity').value = '';
-                document.getElementById('receivedQuantity').value = '';
-                document.getElementById('poBuyPrice').value = '';
-                document.getElementById('newSellPriceReceiving').value = '';
-            }
-        }
-        
-        function updateTransactionDetails() {
-            const container = document.getElementById('transactionDetails');
-            const subtotalEl = document.getElementById('subtotal');
-            const discountEl = document.getElementById('discountAmount');
-            const totalEl = document.getElementById('totalAmount');
-            
-            if (currentTransactionItems.length === 0) {
-                container.innerHTML = '<p>Tidak ada item dalam transaksi saat ini</p>';
-                subtotalEl.textContent = 'Rp 0';
-                discountEl.textContent = 'Rp 0';
-                totalEl.textContent = 'Rp 0';
-                return;
-            }
-            
-            let detailsHtml = '<ul>';
-            currentTransactionItems.forEach(item => {
-                detailsHtml += `<li>${item.quantity} x ${item.product} @ ${formatCurrency(item.price)} = ${formatCurrency(item.total)}</li>`;
-            });
-            detailsHtml += '</ul>';
-            
-            container.innerHTML = detailsHtml;
-            
-            const subtotal = currentTransactionItems.reduce((sum, item) => sum + item.total, 0);
-            const discount = Math.round(subtotal * (document.getElementById('discount').value || 0) / 100);
-            const total = subtotal - discount;
-            
-            subtotalEl.textContent = formatCurrency(subtotal);
-            discountEl.textContent = formatCurrency(discount);
-            totalEl.textContent = formatCurrency(total);
-        }
-        
-        // Complete Transaction
-        function completeTransaction() {
-            if (currentTransactionItems.length === 0) {
-                showNotification('Belum ada item di transaksi!', true);
-                return;
-            }
-            
-            const totalAmount = currentTransactionItems.reduce((sum, item) => sum + item.total, 0);
-            
-            const sale = {
-                id: Date.now(),
-                date: new Date(),
-                items: [...currentTransactionItems],
-                total: totalAmount,
-                status: 'completed'
-            };
-            
-            salesTransactions.push(sale);
-            updateSalesTable();
-            updateSalesStats();
-            updateFinanceStats();
-            updateProfitStats();
-            
-            // Add to income records
-            incomeRecords.push({
-                id: Date.now(),
-                date: new Date(),
-                source: 'sales',
-                amount: totalAmount,
-                description: 'Penjualan produk: ' + currentTransactionItems.map(item => item.product).join(', ')
-            });
-            
-            // Clear current transaction
-            currentTransactionItems = [];
-            updateTransactionDetails();
-            
-            showNotification('Transaksi selesai!');
-        }
-        
-        // Clear Transaction
-        function clearTransaction() {
-            if (currentTransactionItems.length === 0) {
-                showNotification('Tidak ada transaksi yang sedang berlangsung!', true);
-                return;
-            }
-            
-            // Restore stock for all items in current transaction
-            currentTransactionItems.forEach(item => {
-                const product = inventory.find(p => p.name === item.product);
-                if (product) {
-                    product.stock += item.quantity;
-                }
-            });
-            
-            currentTransactionItems = [];
-            updateTransactionDetails();
-            updateStockTable();
-            populateProductSelect();
-            
-            showNotification('Transaksi dibatalkan');
-        }
-        
-        // Table updates
-        function updatePoTable() {
-            const tbody = document.querySelector('#poTable tbody');
-            tbody.innerHTML = '';
-            
-            purchaseOrders.forEach(po => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${po.poNumber}</td>
-                    <td>${formatDate(po.date)}</td>
-                    <td>${po.product}</td>
-                    <td>${po.supplier}</td>
-                    <td>${po.quantity}</td>
-                    <td>${formatCurrency(po.price)}</td>
-                    <td>${formatCurrency(po.total)}</td>
-                    <td><span class="status-badge status-${po.status}">${po.status === 'pending' ? 'Menunggu' : 'Selesai'}</span></td>
-                    <td>
-                        <button class="btn btn-secondary btn-small" onclick="updatePoStatus('${po.poNumber}')">Konfirmasi</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-        
-        function updateStockTable() {
-            const tbody = document.querySelector('#stockTable tbody');
-            tbody.innerHTML = '';
-            
-            inventory.forEach(item => {
-                const statusClass = item.stock <= 10 ? 'status-out' : (item.stock <= 20 ? 'status-low' : 'status-available');
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>${item.stock}</td>
-                    <td>${formatCurrency(item.buyPrice)}</td>
-                    <td>${formatCurrency(item.sellPrice)}</td>
-                    <td><span class="status-badge ${statusClass}">${getStatusText(statusClass)}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary btn-small" onclick="editProduct(${item.id})">Edit</button>
-                            <button class="btn btn-danger btn-small" onclick="deleteProduct(${item.id})">Hapus</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-        
-        function updateSalesTable() {
-            const tbody = document.querySelector('#salesTable tbody');
-            tbody.innerHTML = '';
-            
-            salesTransactions.forEach(sale => {
-                const row = document.createElement('tr');
-                
-                // Create base row content
-                let rowContent = `
-                    <td>${formatDate(sale.date)}</td>
-                    <td>${sale.items.map(item => item.product).join(', ')}</td>
-                    <td>${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
-                    <td>${formatCurrency(sale.total)}</td>
-                    <td><span class="status-badge status-completed">Selesai</span></td>
-                `;
-                
-                // Add delete button only for owner
-                if (currentUser && currentUser.role === 'owner') {
-                    rowContent += `<td>
-                        <button class="btn btn-danger btn-small" onclick="deleteSalesTransaction(${sale.id})">Hapus</button>
-                    </td>`;
-                }
-                
-                row.innerHTML = rowContent;
-                tbody.appendChild(row);
-            });
-        }
-        
-        function updateSupplierTable() {
-            const tbody = document.querySelector('#supplierTable tbody');
-            tbody.innerHTML = '';
-            
-            suppliers.forEach(supplier => {
-                const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier);
-                const totalPOs = supplierPOs.length;
-                const totalValue = supplierPOs.reduce((sum, po) => sum + po.total, 0);
-                const activePOs = supplierPOs.filter(po => po.status === 'pending').length;
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${supplier}</td>
-                    <td>${totalPOs}</td>
-                    <td>${formatCurrency(totalValue)}</td>
-                    <td><span class="status-badge ${activePOs > 0 ? 'status-pending' : 'status-completed'}">${activePOs > 0 ? 'Aktif' : 'Selesai'}</span></td>
-                    <td>
-                        <button class="btn btn-danger btn-small" onclick="deleteSupplier('${supplier}')">Hapus</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-        
-        // Delete sales transaction (only for owner)
-        function deleteSalesTransaction(id) {
-            const sale = salesTransactions.find(s => s.id === id);
-            if (sale) {
-                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus transaksi penjualan ini?`);
-                if (confirmDelete) {
-                    // Restore stock for all items in the transaction
-                    sale.items.forEach(item => {
-                        const product = inventory.find(p => p.name === item.product);
-                        if (product) {
-                            product.stock += item.quantity;
-                        }
-                    });
-                    
-                    // Remove the transaction
-                    salesTransactions = salesTransactions.filter(s => s.id !== id);
-                    
-                    // Remove corresponding income record
-                    incomeRecords = incomeRecords.filter(inc => 
-                        !inc.description.includes(sale.items.map(item => item.product).join(','))
-                    );
-                    
-                    updateSalesTable();
-                    updateSalesStats();
-                    updateFinanceStats();
-                    updateProfitStats();
-                    updateStockTable();
-                    populateProductSelect();
-                    
-                    showNotification('Transaksi penjualan berhasil dihapus');
-                }
-            }
-        }
-        
-        // Toggle between select and input for supplier
-        function toggleSupplierInput() {
-            const supplierSelect = document.getElementById('supplierSelect');
-            const supplierInput = document.getElementById('supplierInput');
-            const toggleBtn = document.getElementById('toggleSupplierBtn');
-            
-            if (supplierInput.classList.contains('hidden')) {
-                // Switch to manual input
-                supplierSelect.classList.add('hidden');
-                supplierInput.classList.remove('hidden');
-                toggleBtn.innerHTML = '<i class="fas fa-list"></i> Pilih';
-                supplierInput.focus();
-            } else {
-                // Switch back to select
-                supplierSelect.classList.remove('hidden');
-                supplierInput.classList.add('hidden');
-                toggleBtn.innerHTML = '<i class="fas fa-edit"></i> Manual';
-                supplierInput.value = '';
-            }
-        }
-        
-        // Handle supplier select change
-        function handleSupplierSelect() {
-            const supplierSelect = document.getElementById('supplierSelect');
-            if (supplierSelect.value === 'other') {
-                toggleSupplierInput();
-            }
-        }
-        
-        // Update supplier select options
-        function updateSupplierSelect() {
-            const supplierSelect = document.getElementById('supplierSelect');
-            
-            // Save current value
-            const currentValue = supplierSelect.value;
-            
-            // Remove all options except the first and the "other" option
-            while (supplierSelect.children.length > 2) {
-                supplierSelect.removeChild(supplierSelect.lastChild);
-            }
-            
-            // Add supplier options
-            suppliers.forEach(supplier => {
-                const option = document.createElement('option');
-                option.value = supplier;
-                option.textContent = supplier;
-                supplierSelect.appendChild(option);
-            });
-            
-            // Restore previous value if it still exists
-            if (suppliers.includes(currentValue)) {
-                supplierSelect.value = currentValue;
-            }
-        }
-        
-        // Delete supplier
-        function deleteSupplier(supplierName) {
-            // Check if supplier has active POs
-            const activePOs = purchaseOrders.filter(po => po.supplier === supplierName && po.status === 'pending');
-            
-            if (activePOs.length > 0) {
-                showNotification(`Tidak dapat menghapus supplier ${supplierName} karena masih memiliki PO aktif!`, true);
-                return;
-            }
-            
-            const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus supplier ${supplierName}?`);
-            if (confirmDelete) {
-                suppliers = suppliers.filter(s => s !== supplierName);
-                updateSupplierSelect();
-                updateSupplierTable();
-                updatePurchaseStats();
-                showNotification(`Supplier ${supplierName} berhasil dihapus`);
-            }
-        }
-        
-        // Check existing product and show price info
-        function checkExistingProduct() {
-            const productName = document.getElementById('productName').value.trim();
-            const productInfo = document.getElementById('productInfo');
-            const existingProductInfo = document.getElementById('existingProductInfo');
-            
-            if (!productName) {
-                productInfo.classList.add('hidden');
-                return;
-            }
-            
-            // Check if product exists in inventory
-            const existingProduct = inventory.find(item => 
-                item.name.toLowerCase().includes(productName.toLowerCase())
-            );
-            
-            if (existingProduct) {
-                existingProductInfo.innerHTML = `
-                    <strong>Produk ditemukan:</strong> ${existingProduct.name}<br>
-                    <strong>Stok saat ini:</strong> ${existingProduct.stock} unit<br>
-                    <strong>Harga beli terakhir:</strong> ${formatCurrency(existingProduct.buyPrice)}<br>
-                    <strong>Harga jual saat ini:</strong> ${formatCurrency(existingProduct.sellPrice)}
-                `;
-                productInfo.classList.remove('hidden');
-                
-                // Auto-fill unit price with last purchase price
-                document.getElementById('unitPrice').value = existingProduct.buyPrice;
-            } else {
-                // Check if there are recent POs for this product
-                const recentPOs = purchaseOrders
-                    .filter(po => po.product.toLowerCase().includes(productName.toLowerCase()))
-                    .sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                if (recentPOs.length > 0) {
-                    const latestPO = recentPOs[0];
-                    existingProductInfo.innerHTML = `
-                        <strong>Produk belum ada di inventory, tetapi ada PO sebelumnya:</strong><br>
-                        <strong>PO Terakhir:</strong> ${latestPO.poNumber} (${formatDate(latestPO.date)})<br>
-                        <strong>Harga beli terakhir:</strong> ${formatCurrency(latestPO.price)}<br>
-                        <strong>Supplier:</strong> ${latestPO.supplier}
-                    `;
-                    productInfo.classList.remove('hidden');
-                    
-                    // Auto-fill unit price with last PO price
-                    document.getElementById('unitPrice').value = latestPO.price;
-                } else {
-                    productInfo.classList.add('hidden');
-                }
-            }
-        }
-        
-        // Helper functions for PO management
-        function updatePoStatus(poNumber) {
-            const po = purchaseOrders.find(p => p.poNumber === poNumber);
-            if (po) {
-                po.status = 'completed';
-                updatePoTable();
-                updatePoSelect();
-                updatePurchaseStats();
-                updateSupplierTable();
-                showNotification(`PO ${po.poNumber} telah dikonfirmasi`);
-            }
-        }
-        
-        function editProduct(id) {
-            const product = inventory.find(p => p.id === id);
-            if (product) {
-                const newBuyPrice = prompt(`Edit harga beli untuk ${product.name}:`, product.buyPrice);
-                const newSellPrice = prompt(`Edit harga jual untuk ${product.name}:`, product.sellPrice);
-                
-                if (newBuyPrice && !isNaN(newBuyPrice) && newSellPrice && !isNaN(newSellPrice)) {
-                    product.buyPrice = parseFloat(newBuyPrice);
-                    product.sellPrice = parseFloat(newSellPrice);
-                    updateStockTable();
-                    populateProductSelect();
-                    showNotification(`Harga ${product.name} diperbarui`);
-                }
-            }
-        }
-        
-        // Fungsi untuk menghapus produk
-        function deleteProduct(id) {
-            const product = inventory.find(p => p.id === id);
-            if (product) {
-                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus produk ${product.name}?`);
-                if (confirmDelete) {
-                    inventory = inventory.filter(p => p.id !== id);
-                    updateStockTable();
-                    populateProductSelect();
-                    updateInventoryStats();
-                    showNotification(`Produk ${product.name} berhasil dihapus`);
-                }
-            }
-        }
-        
         // Chart initialization
         function initializeCharts() {
             // Finance chart
@@ -2597,7 +2593,7 @@
             updateFinanceChart();
             updateProfitChart();
         }
-        
+
         function updateFinanceChart() {
             const dates = [...new Set([...incomeRecords, ...expenseRecords].map(record => formatDate(record.date)))].sort();
             const incomes = dates.map(date => 
@@ -2614,7 +2610,7 @@
             window.financeChart.data.datasets[1].data = expenses;
             window.financeChart.update();
         }
-        
+
         function updateProfitChart() {
             const revenue = getTotalRevenue();
             const cogs = getCOGS();
@@ -2626,29 +2622,437 @@
             window.profitChart.data.datasets[0].data = [revenue, cogs, operationalCost, salaryCost, utilityCost, otherCost];
             window.profitChart.update();
         }
-        
-        // Responsive sidebar for mobile
-        function handleResize() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main-content');
+
+        // Additional functionality
+        function toggleSupplierInput() {
+            const supplierSelect = document.getElementById('supplierSelect');
+            const supplierInput = document.getElementById('supplierInput');
+            const toggleBtn = document.getElementById('toggleSupplierBtn');
             
-            if (window.innerWidth < 768) {
-                sidebar.classList.add('hidden');
-                mainContent.classList.add('expanded');
+            if (supplierInput.classList.contains('hidden')) {
+                // Switch to manual input
+                supplierSelect.classList.add('hidden');
+                supplierInput.classList.remove('hidden');
+                toggleBtn.innerHTML = '<i class="fas fa-list"></i> Pilih';
+                supplierInput.focus();
             } else {
-                sidebar.classList.remove('hidden');
-                mainContent.classList.remove('expanded');
+                // Switch back to select
+                supplierSelect.classList.remove('hidden');
+                supplierInput.classList.add('hidden');
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i> Manual';
+                supplierInput.value = '';
             }
         }
-        
-        // Add resize event listener
-        window.addEventListener('resize', handleResize);
-        
-        // Initialize on load
-        handleResize();
-        
-        // Export data functions (bonus feature)
+
+        function handleSupplierSelect() {
+            const supplierSelect = document.getElementById('supplierSelect');
+            if (supplierSelect.value === 'other') {
+                toggleSupplierInput();
+            }
+        }
+
+        function updateSupplierSelect() {
+            const supplierSelect = document.getElementById('supplierSelect');
+            
+            // Save current value
+            const currentValue = supplierSelect.value;
+            
+            // Remove all options except the first and the "other" option
+            while (supplierSelect.children.length > 2) {
+                supplierSelect.removeChild(supplierSelect.lastChild);
+            }
+            
+            // Add supplier options
+            suppliers.forEach(supplier => {
+                const option = document.createElement('option');
+                option.value = supplier;
+                option.textContent = supplier;
+                supplierSelect.appendChild(option);
+            });
+            
+            // Restore previous value if it still exists
+            if (suppliers.includes(currentValue)) {
+                supplierSelect.value = currentValue;
+            }
+        }
+
+        function checkExistingProduct() {
+            const productName = document.getElementById('productName').value.trim();
+            const productInfo = document.getElementById('productInfo');
+            const existingProductInfo = document.getElementById('existingProductInfo');
+            
+            if (!productName) {
+                productInfo.classList.add('hidden');
+                return;
+            }
+            
+            // Check if product exists in inventory
+            const existingProduct = inventory.find(item => 
+                item.name.toLowerCase().includes(productName.toLowerCase())
+            );
+            
+            if (existingProduct) {
+                existingProductInfo.innerHTML = `
+                    <strong>Produk ditemukan:</strong> ${existingProduct.name}<br>
+                    <strong>Stok saat ini:</strong> ${existingProduct.stock} unit<br>
+                    <strong>Harga beli terakhir:</strong> ${formatCurrency(existingProduct.buyPrice)}<br>
+                    <strong>Harga jual saat ini:</strong> ${formatCurrency(existingProduct.sellPrice)}
+                `;
+                productInfo.classList.remove('hidden');
+                
+                // Auto-fill unit price with last purchase price
+                document.getElementById('unitPrice').value = existingProduct.buyPrice;
+            } else {
+                // Check if there are recent POs for this product
+                const recentPOs = purchaseOrders
+                    .filter(po => po.product.toLowerCase().includes(productName.toLowerCase()))
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                if (recentPOs.length > 0) {
+                    const latestPO = recentPOs[0];
+                    existingProductInfo.innerHTML = `
+                        <strong>Produk belum ada di inventory, tetapi ada PO sebelumnya:</strong><br>
+                        <strong>PO Terakhir:</strong> ${latestPO.poNumber} (${formatDate(latestPO.date)})<br>
+                        <strong>Harga beli terakhir:</strong> ${formatCurrency(latestPO.price)}<br>
+                        <strong>Supplier:</strong> ${latestPO.supplier}
+                    `;
+                    productInfo.classList.remove('hidden');
+                    
+                    // Auto-fill unit price with last PO price
+                    document.getElementById('unitPrice').value = latestPO.price;
+                } else {
+                    productInfo.classList.add('hidden');
+                }
+            }
+        }
+
+        function updatePoStatus(poNumber) {
+            const po = purchaseOrders.find(p => p.poNumber === poNumber);
+            if (po) {
+                po.status = 'completed';
+                
+                // Update all related components
+                updateAllStats();
+                
+                showNotification(`PO ${po.poNumber} telah dikonfirmasi`);
+            }
+        }
+
+        function editProduct(id) {
+            const product = inventory.find(p => p.id === id);
+            if (product) {
+                const newBuyPrice = prompt(`Edit harga beli untuk ${product.name}:`, product.buyPrice);
+                const newSellPrice = prompt(`Edit harga jual untuk ${product.name}:`, product.sellPrice);
+                
+                if (newBuyPrice && !isNaN(newBuyPrice) && newSellPrice && !isNaN(newSellPrice)) {
+                    product.buyPrice = parseFloat(newBuyPrice);
+                    product.sellPrice = parseFloat(newSellPrice);
+                    
+                    // Update related components
+                    updateStockTable();
+                    populateProductSelect();
+                    updateInventoryStats();
+                    
+                    showNotification(`Harga ${product.name} diperbarui`);
+                }
+            }
+        }
+
+        function deleteProduct(id) {
+            const product = inventory.find(p => p.id === id);
+            if (product) {
+                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus produk ${product.name}?`);
+                if (confirmDelete) {
+                    inventory = inventory.filter(p => p.id !== id);
+                    
+                    // Update related components
+                    updateAllStats();
+                    
+                    showNotification(`Produk ${product.name} berhasil dihapus`);
+                }
+            }
+        }
+
+        function deleteSalesTransaction(id) {
+            const sale = salesTransactions.find(s => s.id === id);
+            if (sale) {
+                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus transaksi penjualan ini?`);
+                if (confirmDelete) {
+                    // Restore stock for all items in the transaction
+                    sale.items.forEach(item => {
+                        const product = inventory.find(p => p.name === item.product);
+                        if (product) {
+                            product.stock += item.quantity;
+                        }
+                    });
+                    
+                    // Remove the transaction
+                    salesTransactions = salesTransactions.filter(s => s.id !== id);
+                    
+                    // Remove corresponding income record
+                    incomeRecords = incomeRecords.filter(inc => 
+                        !inc.description.includes(sale.items.map(item => item.product).join(','))
+                    );
+                    
+                    // Update all related components
+                    updateAllStats();
+                    
+                    showNotification('Transaksi penjualan berhasil dihapus');
+                }
+            }
+        }
+
+        function deleteSupplier(supplierName) {
+            // Check if supplier has active POs
+            const activePOs = purchaseOrders.filter(po => po.supplier === supplierName && po.status === 'pending');
+            
+            if (activePOs.length > 0) {
+                showNotification(`Tidak dapat menghapus supplier ${supplierName} karena masih memiliki PO aktif!`, true);
+                return;
+            }
+            
+            const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus supplier ${supplierName}?`);
+            if (confirmDelete) {
+                suppliers = suppliers.filter(s => s !== supplierName);
+                
+                // Update related components
+                updateAllStats();
+                
+                showNotification(`Supplier ${supplierName} berhasil dihapus`);
+            }
+        }
+
+        function editUser(id) {
+            const user = users.find(u => u.id === id);
+            if (user) {
+                const newFullName = prompt(`Edit nama lengkap untuk ${user.username}:`, user.fullName);
+                const newRole = prompt(`Edit role untuk ${user.username} (owner/kasir/manager):`, user.role);
+                const newStatus = prompt(`Edit status untuk ${user.username} (active/inactive):`, user.status);
+                
+                if (newFullName && newRole && newStatus) {
+                    user.fullName = newFullName;
+                    user.role = newRole;
+                    user.status = newStatus;
+                    
+                    // Update related components
+                    updateAllStats();
+                    
+                    showNotification(`User ${user.username} berhasil diperbarui`);
+                }
+            }
+        }
+
+        function deleteUser(id) {
+            const user = users.find(u => u.id === id);
+            if (user) {
+                // Prevent deleting current user
+                if (currentUser && currentUser.id === id) {
+                    showNotification('Tidak dapat menghapus user yang sedang login!', true);
+                    return;
+                }
+                
+                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus user ${user.fullName}?`);
+                if (confirmDelete) {
+                    users = users.filter(u => u.id !== id);
+                    
+                    // Update related components
+                    updateAllStats();
+                    
+                    showNotification(`User ${user.fullName} berhasil dihapus`);
+                }
+            }
+        }
+
+        function editCost(costType) {
+            let currentValue = 0;
+            let costName = '';
+            
+            switch(costType) {
+                case 'cogs':
+                    currentValue = getCOGS();
+                    costName = 'Biaya Beli Barang';
+                    break;
+                case 'operational':
+                    currentValue = expenseRecords.filter(exp => exp.type === 'operational').reduce((sum, exp) => sum + exp.amount, 0);
+                    costName = 'Biaya Operasional';
+                    break;
+                case 'salary':
+                    currentValue = getSalaryCost();
+                    costName = 'Biaya Gaji Karyawan';
+                    break;
+                case 'utility':
+                    currentValue = getUtilityCost();
+                    costName = 'Biaya Utilitas';
+                    break;
+                case 'other':
+                    currentValue = expenseRecords.filter(exp => !['purchase', 'operational', 'salary', 'utility'].includes(exp.type)).reduce((sum, exp) => sum + exp.amount, 0);
+                    costName = 'Biaya Lain-lain';
+                    break;
+            }
+            
+            const newValue = prompt(`Edit ${costName}:`, currentValue);
+            
+            if (newValue && !isNaN(newValue)) {
+                const amount = parseFloat(newValue);
+                
+                // Update the corresponding records
+                switch(costType) {
+                    case 'cogs':
+                        expenseRecords.push({
+                            id: Date.now(),
+                            date: new Date(),
+                            type: 'purchase',
+                            amount: amount - currentValue,
+                            description: `Penyesuaian ${costName}`
+                        });
+                        break;
+                    case 'operational':
+                        expenseRecords.push({
+                            id: Date.now(),
+                            date: new Date(),
+                            type: 'operational',
+                            amount: amount - currentValue,
+                            description: `Penyesuaian ${costName}`
+                        });
+                        break;
+                    case 'salary':
+                        expenseRecords.push({
+                            id: Date.now(),
+                            date: new Date(),
+                            type: 'salary',
+                            amount: amount - currentValue,
+                            description: `Penyesuaian ${costName}`
+                        });
+                        break;
+                    case 'utility':
+                        utilityRecords.push({
+                            id: Date.now(),
+                            date: new Date(),
+                            type: 'other',
+                            period: new Date().toISOString().slice(0, 7),
+                            amount: amount - currentValue,
+                            description: `Penyesuaian ${costName}`
+                        });
+                        break;
+                    case 'other':
+                        expenseRecords.push({
+                            id: Date.now(),
+                            date: new Date(),
+                            type: 'other',
+                            amount: amount - currentValue,
+                            description: `Penyesuaian ${costName}`
+                        });
+                        break;
+                }
+                
+                // Recalculate profit and update all components
+                updateAllStats();
+                
+                showNotification(`${costName} berhasil diperbarui`);
+            }
+        }
+
+        // Search functionality
+        function searchTable(tableId, searchTerm) {
+            const table = document.getElementById(tableId);
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        // PERBAIKAN: Export to Excel - TAMBAHAN: Cek role user
+        function exportToExcel() {
+            // Cek apakah user memiliki akses
+            if (!currentUser) {
+                showNotification('Harap login terlebih dahulu!', true);
+                return;
+            }
+            
+            // Semua role bisa export Excel
+            try {
+                // Create workbook
+                const workbook = XLSX.utils.book_new();
+                
+                // Worksheet untuk Purchase Orders
+                const poData = purchaseOrders.map(po => ({
+                    'No. PO': po.poNumber,
+                    'Tanggal': formatDate(po.date),
+                    'Produk': po.product,
+                    'Supplier': po.supplier,
+                    'Kuantitas': po.quantity,
+                    'Harga Satuan': po.price,
+                    'Total': po.total,
+                    'Status': po.status === 'pending' ? 'Menunggu' : 'Selesai'
+                }));
+                if (poData.length > 0) {
+                    const poWorksheet = XLSX.utils.json_to_sheet(poData);
+                    XLSX.utils.book_append_sheet(workbook, poWorksheet, 'Purchase Orders');
+                }
+                
+                // Worksheet untuk Inventory
+                const inventoryData = inventory.map(item => ({
+                    'Produk': item.name,
+                    'Stok': item.stock,
+                    'Harga Beli': item.buyPrice,
+                    'Harga Jual': item.sellPrice,
+                    'Status': item.stock <= 10 ? 'Kosong' : (item.stock <= 20 ? 'Stok Rendah' : 'Tersedia')
+                }));
+                if (inventoryData.length > 0) {
+                    const inventoryWorksheet = XLSX.utils.json_to_sheet(inventoryData);
+                    XLSX.utils.book_append_sheet(workbook, inventoryWorksheet, 'Persediaan');
+                }
+                
+                // Worksheet untuk Penjualan
+                const salesData = salesTransactions.map(sale => ({
+                    'Tanggal': formatDate(sale.date),
+                    'Produk': sale.items.map(item => item.product).join(', '),
+                    'Jumlah Total': sale.items.reduce((sum, item) => sum + item.quantity, 0),
+                    'Total Penjualan': sale.total,
+                    'Status': 'Selesai'
+                }));
+                if (salesData.length > 0) {
+                    const salesWorksheet = XLSX.utils.json_to_sheet(salesData);
+                    XLSX.utils.book_append_sheet(workbook, salesWorksheet, 'Penjualan');
+                }
+                
+                // Worksheet untuk Keuangan
+                const totalIncome = incomeRecords.reduce((sum, inc) => sum + inc.amount, 0);
+                const totalExpense = expenseRecords.reduce((sum, exp) => sum + exp.amount, 0);
+                const totalUtility = utilityRecords.reduce((sum, util) => sum + util.amount, 0);
+                const cashBalance = totalIncome - totalExpense - totalUtility;
+                
+                const financeData = [
+                    { 'Jenis': 'Total Pemasukan', 'Jumlah': totalIncome },
+                    { 'Jenis': 'Total Pengeluaran', 'Jumlah': totalExpense },
+                    { 'Jenis': 'Total Biaya Utilitas', 'Jumlah': totalUtility },
+                    { 'Jenis': 'Saldo Kas', 'Jumlah': cashBalance },
+                    { 'Jenis': 'Piutang Pelanggan', 'Jumlah': getTotalReceivables() },
+                    { 'Jenis': 'Hutang Supplier', 'Jumlah': getTotalPayables() }
+                ];
+                const financeWorksheet = XLSX.utils.json_to_sheet(financeData);
+                XLSX.utils.book_append_sheet(workbook, financeWorksheet, 'Keuangan');
+                
+                // Save the workbook
+                const today = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(workbook, `laporan-toko-${today}.xlsx`);
+                
+                showNotification('Data berhasil diexport ke Excel');
+            } catch (error) {
+                showNotification('Error saat export ke Excel: ' + error.message, true);
+            }
+        }
+
+        // Export/Import functionality JSON - TAMBAHAN: Cek role user
         function exportData() {
+            // Hanya owner yang bisa export JSON
+            if (!currentUser || currentUser.role !== 'owner') {
+                showNotification('Hanya owner yang dapat melakukan export data lengkap!', true);
+                return;
+            }
+            
             const data = {
                 purchaseOrders,
                 inventory,
@@ -2668,9 +3072,17 @@
             link.href = URL.createObjectURL(dataBlob);
             link.download = `toko-data-${new Date().toISOString().split('T')[0]}.json`;
             link.click();
+            
+            showNotification('Data berhasil diexport ke JSON');
         }
-        
+
         function importData(event) {
+            // Hanya owner yang bisa import JSON
+            if (!currentUser || currentUser.role !== 'owner') {
+                showNotification('Hanya owner yang dapat melakukan import data!', true);
+                return;
+            }
+            
             const file = event.target.files[0];
             if (!file) return;
             
@@ -2690,15 +3102,8 @@
                         suppliers = data.suppliers || [];
                         users = data.users || [];
                         
-                        // Update all tables and stats
+                        // Update all components
                         updateAllStats();
-                        updatePoTable();
-                        updateStockTable();
-                        updateSalesTable();
-                        updateSupplierTable();
-                        updateUsersTable();
-                        populateProductSelect();
-                        updatePoSelect();
                         
                         showNotification('Data berhasil diimpor');
                     } else {
@@ -2713,39 +3118,7 @@
             // Reset file input
             event.target.value = '';
         }
-        
-        // Add export/import buttons to the UI
-        function addExportImportButtons() {
-            const header = document.querySelector('header');
-            const exportBtn = document.createElement('button');
-            exportBtn.className = 'btn btn-outline';
-            exportBtn.innerHTML = '<i class="fas fa-download"></i> Export Data';
-            exportBtn.onclick = exportData;
-            exportBtn.style.marginRight = '10px';
-            
-            const importBtn = document.createElement('input');
-            importBtn.type = 'file';
-            importBtn.id = 'importFile';
-            importBtn.accept = '.json';
-            importBtn.style.display = 'none';
-            importBtn.onchange = importData;
-            
-            const importLabel = document.createElement('label');
-            importLabel.htmlFor = 'importFile';
-            importLabel.className = 'btn btn-outline';
-            importLabel.innerHTML = '<i class="fas fa-upload"></i> Import Data';
-            importLabel.style.cursor = 'pointer';
-            
-            const userInfo = document.querySelector('.user-info');
-            userInfo.parentNode.insertBefore(importLabel, userInfo);
-            userInfo.parentNode.insertBefore(importBtn, userInfo);
-            userInfo.parentNode.insertBefore(exportBtn, userInfo);
-        }
-        
-        // Initialize export/import buttons after login
-        // Panggil fungsi ini setelah login berhasil
-        // addExportImportButtons();
-        
+
         // Auto-save functionality
         function autoSave() {
             const data = {
@@ -2762,7 +3135,7 @@
             
             localStorage.setItem('tokoAppData', JSON.stringify(data));
         }
-        
+
         function loadAutoSave() {
             const savedData = localStorage.getItem('tokoAppData');
             if (savedData) {
@@ -2790,25 +3163,40 @@
                 }
             }
         }
-        
+
         // Set up auto-save interval
-        setInterval(autoSave, 30000); // Save every 30 seconds
-        
-        // Load saved data on startup
-        document.addEventListener('DOMContentLoaded', function() {
-            loadAutoSave();
+        setInterval(autoSave, 30000);
+
+        // Responsive design
+        function handleResize() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
             
-            // Update all displays with loaded data
-            updateAllStats();
-            updatePoTable();
-            updateStockTable();
-            updateSalesTable();
-            updateSupplierTable();
-            updateUsersTable();
-            populateProductSelect();
-            updatePoSelect();
-        });
-        
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('hidden');
+                mainContent.classList.add('expanded');
+            } else {
+                sidebar.classList.remove('hidden');
+                mainContent.classList.remove('expanded');
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        // Dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            showNotification('Mode ' + (document.body.classList.contains('dark-mode') ? 'gelap' : 'terang') + ' diaktifkan');
+        }
+
+        // Load dark mode preference
+        function loadDarkModePreference() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             // Ctrl+S for save
@@ -2824,248 +3212,7 @@
                     clearTransaction();
                 }
             }
-            
-            // F1 for help
-            if (e.key === 'F1') {
-                e.preventDefault();
-                showNotification('Keyboard Shortcuts: Ctrl+S (Save), Escape (Clear Transaction)');
-            }
         });
-        
-        // Search functionality for tables
-        function addSearchFunctionality() {
-            // Add search inputs to each table section
-            const tables = ['poTable', 'stockTable', 'salesTable', 'supplierTable', 'usersTable'];
-            
-            tables.forEach(tableId => {
-                const table = document.getElementById(tableId);
-                if (table) {
-                    const container = table.closest('.table-container');
-                    const searchInput = document.createElement('input');
-                    searchInput.type = 'text';
-                    searchInput.placeholder = 'Cari...';
-                    searchInput.style.marginBottom: '10px';
-                    searchInput.style.padding = '8px';
-                    searchInput.style.width = '200px';
-                    searchInput.style.border = '1px solid #ddd';
-                    searchInput.style.borderRadius = '4px';
-                    
-                    searchInput.addEventListener('input', function() {
-                        const searchTerm = this.value.toLowerCase();
-                        const rows = table.querySelectorAll('tbody tr');
-                        
-                        rows.forEach(row => {
-                            const text = row.textContent.toLowerCase();
-                            row.style.display = text.includes(searchTerm) ? '' : 'none';
-                        });
-                    });
-                    
-                    container.insertBefore(searchInput, container.firstChild);
-                }
-            });
-        }
-        
-        // Initialize search functionality after DOM is loaded
-        // addSearchFunctionality();
-        
-        // Print functionality
-        function printReport(type) {
-            const printContent = document.getElementById(type).innerHTML;
-            const originalContent = document.body.innerHTML;
-            
-            document.body.innerHTML = `
-                <div class="container">
-                    <h1>Laporan ${type.charAt(0).toUpperCase() + type.slice(1)}</h1>
-                    ${printContent}
-                </div>
-            `;
-            
-            window.print();
-            document.body.innerHTML = originalContent;
-            
-            // Refresh the UI
-            showTab(type);
-        }
-        
-        // Add print buttons to each tab
-        function addPrintButtons() {
-            const tabs = ['purchase', 'inventory', 'sales', 'finance', 'profit', 'users'];
-            
-            tabs.forEach(tabId => {
-                const tab = document.getElementById(tabId);
-                if (tab) {
-                    const header = tab.querySelector('h2');
-                    const printBtn = document.createElement('button');
-                    printBtn.className = 'btn btn-outline';
-                    printBtn.innerHTML = '<i class="fas fa-print"></i> Cetak';
-                    printBtn.onclick = () => printReport(tabId);
-                    printBtn.style.float = 'right';
-                    printBtn.style.marginLeft = '10px';
-                    
-                    header.parentNode.insertBefore(printBtn, header.nextSibling);
-                }
-            });
-        }
-        
-        // Initialize print buttons
-        // addPrintButtons();
-        
-        // Data validation functions
-        function validateProductData(product) {
-            const errors = [];
-            
-            if (!product.name || product.name.trim() === '') {
-                errors.push('Nama produk harus diisi');
-            }
-            
-            if (!product.stock || product.stock < 0) {
-                errors.push('Stok harus bilangan positif');
-            }
-            
-            if (!product.buyPrice || product.buyPrice <= 0) {
-                errors.push('Harga beli harus lebih dari 0');
-            }
-            
-            if (!product.sellPrice || product.sellPrice <= 0) {
-                errors.push('Harga jual harus lebih dari 0');
-            }
-            
-            if (product.sellPrice < product.buyPrice) {
-                errors.push('Harga jual harus lebih tinggi dari harga beli');
-            }
-            
-            return errors;
-        }
-        
-        function validateUserData(user) {
-            const errors = [];
-            
-            if (!user.fullName || user.fullName.trim() === '') {
-                errors.push('Nama lengkap harus diisi');
-            }
-            
-            if (!user.username || user.username.trim() === '') {
-                errors.push('Username harus diisi');
-            }
-            
-            if (!user.password || user.password.length < 3) {
-                errors.push('Password harus minimal 3 karakter');
-            }
-            
-            if (!['owner', 'kasir', 'manager'].includes(user.role)) {
-                errors.push('Role tidak valid');
-            }
-            
-            return errors;
-        }
-        
-        // Enhanced notification with sound
-        function showNotification(message, isError = false) {
-            const notification = document.getElementById('notification');
-            const text = document.getElementById('notificationText');
-            
-            text.textContent = message;
-            notification.className = `notification ${isError ? 'error' : ''} show`;
-            
-            // Play sound for error notifications
-            if (isError) {
-                // Create a simple beep sound
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = 300;
-                gainNode.gain.value = 0.1;
-                
-                oscillator.start();
-                setTimeout(() => {
-                    oscillator.stop();
-                }, 200);
-            }
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Dark mode toggle
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-        }
-        
-        // Load dark mode preference
-        function loadDarkModePreference() {
-            if (localStorage.getItem('darkMode') === 'true') {
-                document.body.classList.add('dark-mode');
-            }
-        }
-        
-        // Add dark mode styles
-        const darkModeStyles = `
-            <style>
-                body.dark-mode {
-                    background-color: #1a1a1a;
-                    color: #ffffff;
-                }
-                
-                body.dark-mode .card,
-                body.dark-mode .tab-content {
-                    background-color: #2d2d2d;
-                    color: #ffffff;
-                }
-                
-                body.dark-mode table {
-                    background-color: #2d2d2d;
-                    color: #ffffff;
-                }
-                
-                body.dark-mode th {
-                    background-color: #3d3d3d;
-                    color: #ffffff;
-                }
-                
-                body.dark-mode input,
-                body.dark-mode select,
-                body.dark-mode textarea {
-                    background-color: #3d3d3d;
-                    color: #ffffff;
-                    border-color: #555;
-                }
-                
-                body.dark-mode .sidebar {
-                    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-                }
-                
-                body.dark-mode header {
-                    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-                }
-            </style>
-        `;
-        
-        document.head.insertAdjacentHTML('beforeend', darkModeStyles);
-        
-        // Initialize dark mode
-        loadDarkModePreference();
-        
-        // Add dark mode toggle button
-        function addDarkModeToggle() {
-            const header = document.querySelector('header');
-            const darkModeBtn = document.createElement('button');
-            darkModeBtn.className = 'btn btn-outline';
-            darkModeBtn.innerHTML = '<i class="fas fa-moon"></i>';
-            darkModeBtn.onclick = toggleDarkMode;
-            darkModeBtn.style.marginRight = '10px';
-            
-            const userInfo = document.querySelector('.user-info');
-            userInfo.parentNode.insertBefore(darkModeBtn, userInfo);
-        }
-        
-        // Initialize dark mode toggle
-        // addDarkModeToggle();
     </script>
 </body>
 </html>

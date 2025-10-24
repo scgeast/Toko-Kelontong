@@ -16,8 +16,8 @@
         }
         
         body {
-            background-color: #8a0303;
-            color: #f5f5f5;
+            background-color: #f5f7fa;
+            color: #333;
             display: flex;
             min-height: 100vh;
         }
@@ -25,7 +25,7 @@
         /* Sidebar Styles */
         .sidebar {
             width: 250px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #9a031e 0%, #5a0000 100%); /* Maroon Glow gradient */
             color: white;
             height: 100vh;
             position: fixed;
@@ -33,7 +33,7 @@
             top: 0;
             transition: transform 0.3s ease;
             z-index: 1000;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
             overflow-y: auto;
             display: none;
         }
@@ -198,30 +198,6 @@
         
         .logout-btn:hover {
             background: rgba(255,255,255,0.4);
-        }
-        
-        nav {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .nav-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 5px;
-        }
-        
-        .nav-btn:hover, .nav-btn.active {
-            background: rgba(255,255,255,0.4);
-            transform: translateY(-2px);
         }
         
         /* Tab Content */
@@ -669,16 +645,6 @@
                 justify-content: center;
                 margin-top: 10px;
             }
-            
-            nav {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .nav-btn {
-                width: 100%;
-                margin-bottom: 5px;
-            }
         }
     </style>
 </head>
@@ -777,14 +743,6 @@
                     <span id="currentUser">User</span>
                     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
-                <nav>
-                    <button class="nav-btn" onclick="showTab('purchase')" id="purchaseBtn"><i class="fas fa-shopping-cart"></i> Pembelian</button>
-                    <button class="nav-btn" onclick="showTab('inventory')" id="inventoryBtn"><i class="fas fa-boxes"></i> Persediaan</button>
-                    <button class="nav-btn active" onclick="showTab('sales')" id="salesBtn"><i class="fas fa-cash-register"></i> Penjualan</button>
-                    <button class="nav-btn" onclick="showTab('finance')" id="financeBtn"><i class="fas fa-chart-line"></i> Keuangan</button>
-                    <button class="nav-btn" onclick="showTab('profit')" id="profitBtn"><i class="fas fa-calculator"></i> Laba/Rugi</button>
-                    <button class="nav-btn" onclick="showTab('users')" id="usersBtn"><i class="fas fa-users"></i> User</button>
-                </nav>
             </header>
 
             <!-- Tab Pembelian -->
@@ -1876,60 +1834,23 @@
 
         // Setup UI based on user role - MODIFIKASI: Menambahkan kontrol untuk export/import
         function setupUserInterface() {
-            const purchaseBtn = document.getElementById('purchaseBtn');
-            const inventoryBtn = document.getElementById('inventoryBtn');
-            const financeBtn = document.getElementById('financeBtn');
-            const profitBtn = document.getElementById('profitBtn');
-            const usersBtn = document.getElementById('usersBtn');
-            
-            // Show/hide action column in sales table based on user role
-            const salesActionHeader = document.getElementById('salesActionHeader');
-            
             // Kontrol untuk section export/import di sidebar
             const ownerExportSection = document.getElementById('ownerExportSection');
-            
-            // Hide all tabs first
-            purchaseBtn.style.display = 'none';
-            inventoryBtn.style.display = 'none';
-            financeBtn.style.display = 'none';
-            profitBtn.style.display = 'none';
-            usersBtn.style.display = 'none';
             
             // Hide owner export section by default
             ownerExportSection.classList.add('hidden');
             
             // Show tabs based on user role
             if (currentUser.role === 'kasir') {
-                // Kasir can only see sales tab
-                salesBtn.style.display = 'inline-block';
-                salesActionHeader.classList.add('hidden');
-                
                 // Kasir tidak bisa akses export/import JSON
                 ownerExportSection.classList.add('hidden');
                 
                 // Show only sales tab
                 showTab('sales');
             } else if (currentUser.role === 'owner') {
-                // Owner can see all tabs
-                purchaseBtn.style.display = 'inline-block';
-                inventoryBtn.style.display = 'inline-block';
-                salesBtn.style.display = 'inline-block';
-                financeBtn.style.display = 'inline-block';
-                profitBtn.style.display = 'inline-block';
-                usersBtn.style.display = 'inline-block';
-                salesActionHeader.classList.remove('hidden');
-                
                 // Owner bisa akses semua fitur export/import
                 ownerExportSection.classList.remove('hidden');
             } else if (currentUser.role === 'manager') {
-                // Manager can see most tabs but not user management
-                purchaseBtn.style.display = 'inline-block';
-                inventoryBtn.style.display = 'inline-block';
-                salesBtn.style.display = 'inline-block';
-                financeBtn.style.display = 'inline-block';
-                profitBtn.style.display = 'inline-block';
-                salesActionHeader.classList.remove('hidden');
-                
                 // Manager tidak bisa akses export/import JSON
                 ownerExportSection.classList.add('hidden');
             }
@@ -2010,11 +1931,9 @@
         // Tab switching functionality - DIPERBAIKI
         function showTab(tabId) {
             const tabs = document.querySelectorAll('.tab-content');
-            const buttons = document.querySelectorAll('.nav-btn');
             const sidebarItems = document.querySelectorAll('.sidebar-item');
             
             tabs.forEach(tab => tab.classList.remove('active'));
-            buttons.forEach(btn => btn.classList.remove('active'));
             sidebarItems.forEach(item => item.classList.remove('active'));
             
             document.getElementById(tabId).classList.add('active');

@@ -2488,7 +2488,7 @@
             select.innerHTML = '<option value="">Pilih Nomor PO</option>';
             
             // Hanya menampilkan PO dengan status 'Menunggu' (outstanding/aktif)
-            const outstandingPOs = purchaseOrders.filter(po => po.status === 'Menunggu');
+            const outstandingPOs = purchaseOrders.filter(po => po.status === 'Pending');
             
             outstandingPOs.forEach(po => {
                 const option = document.createElement('option');

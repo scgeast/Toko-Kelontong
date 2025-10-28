@@ -2027,6 +2027,8 @@
                 { id: 2, fullName: 'Kasir Toko', username: 'kasir', password: 'kasir123', role: 'kasir', status: 'active' },
                 { id: 3, fullName: 'Manager Toko', username: 'manager', password: 'manager123', role: 'manager', status: 'active' }
             );
+            // ✅ Tambahkan baris ini di sini, setelah semua data sample dimuat
+            updatePoSelect();
         }
 
         // Toggle sidebar
@@ -3388,6 +3390,7 @@
                     break;
                 case 'inventory':
                     updateStockTable();
+                    updatePoSelect();
                     break;
                 case 'sales':
                     updateSalesTable();

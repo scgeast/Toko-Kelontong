@@ -934,6 +934,12 @@
                     <span>Export Excel</span>
                 </button>
                 
+                <!-- Reset Data Button -->
+                <button class="sidebar-export-btn" onclick="resetAllData()">
+                    <i class="fas fa-trash"></i>
+                    <span>Reset Semua Data</span>
+                </button>
+                
                 <!-- Section khusus untuk Owner -->
                 <div id="ownerExportSection" class="sidebar-export-section hidden">
                     <h4>Admin Tools</h4>
@@ -1551,7 +1557,7 @@
     </div>
 
     <script>
-        // Data storage
+        // ================= DATA STORAGE =================
         let purchaseOrders = [];
         let inventory = [];
         let salesTransactions = [];
@@ -1561,65 +1567,143 @@
         let suppliers = [];
         let users = [];
         
-        // Current transaction items
         let currentTransactionItems = [];
-        
-        // Current user
         let currentUser = null;
 
-        // Data Observer untuk update realtime
-        const dataObservers = {
-            purchaseOrders: [],
-            inventory: [],
-            salesTransactions: [],
-            incomeRecords: [],
-            expenseRecords: [],
-            utilityRecords: [],
-            suppliers: [],
-            users: []
-        };
+        // ================= PERBAIKAN SISTEM KEUANGAN =================
 
-        // Fungsi untuk mendaftarkan observer
-        function registerObserver(dataType, callback) {
-            if (dataObservers[dataType]) {
-                dataObservers[dataType].push(callback);
+        // 1. PERBAIKAN FUNGSI updateFinanceStats()
+        function updateFinanceStats() {
+            console.log('=== MEMPERBARUI STATS KEUANGAN ===');
+            
+            // Hitung total pemasukan dari semua sumber
+            const totalIncome = incomeRecords.reduce((sum, inc) => sum + inc.amount, 0);
+            console.log('Total Income:', totalIncome, 'dari', incomeRecords.length, 'records');
+            
+            // Hitung total pengeluaran (termasuk pembelian barang)
+            const totalExpense = expenseRecords.reduce((sum, exp) => sum + exp.amount, 0);
+            console.log('Total Expense:', totalExpense, 'dari', expenseRecords.length, 'records');
+            
+            // Hitung total biaya utilitas
+            const totalUtility = utilityRecords.reduce((sum, util) => sum + util.amount, 0);
+            console.log('Total Utility:', totalUtility, 'dari', utilityRecords.length, 'records');
+            
+            // PERBAIKAN: Hitung saldo kas yang benar
+            // Saldo Kas = Total Pemasukan - Total Pengeluaran - Total Utilitas
+            const cashBalance = totalIncome - totalExpense - totalUtility;
+            console.log('Final Cash Balance:', cashBalance);
+            
+            // Update tampilan
+            document.getElementById('cashBalance').textContent = formatCurrency(cashBalance);
+            document.getElementById('customerReceivables').textContent = formatCurrency(getTotalReceivables());
+            document.getElementById('supplierPayables').textContent = formatCurrency(getTotalPayables());
+            
+            // Update charts
+            updateFinanceChart();
+            
+            console.log('=== UPDATE SELESAI ===');
+        }
+
+        // 2. PERBAIKAN FUNGSI getTotalPayables() - Hutang Supplier
+        function getTotalPayables() {
+            const pendingPOs = purchaseOrders.filter(po => po.status === 'pending');
+            const totalPayables = pendingPOs.reduce((sum, po) => sum + po.total, 0);
+            console.log('Hutang Supplier:', totalPayables, 'dari', pendingPOs.length, 'PO pending');
+            return totalPayables;
+        }
+
+        // 3. PERBAIKAN FUNGSI getTotalReceivables() - Piutang Pelanggan
+        function getTotalReceivables() {
+            // Untuk aplikasi sederhana, anggap tidak ada piutang
+            return 0;
+        }
+
+        // 4. FUNGSI RESET SEMUA DATA
+        function resetAllData() {
+            if(confirm('Apakah Anda yakin ingin mereset SEMUA data? Tindakan ini tidak dapat dibatalkan dan akan menghapus semua transaksi, inventory, dan data keuangan.')) {
+                // Kosongkan semua array
+                purchaseOrders.length = 0;
+                inventory.length = 0;
+                salesTransactions.length = 0;
+                incomeRecords.length = 0;
+                expenseRecords.length = 0;
+                utilityRecords.length = 0;
+                currentTransactionItems.length = 0;
+                
+                // Hapus data dari localStorage
+                localStorage.removeItem('tokoAppData');
+                
+                // Load ulang data sample minimal
+                loadMinimalSampleData();
+                
+                // Update semua tampilan
+                updateAllStats();
+                
+                showNotification('Semua data berhasil direset ke kondisi awal');
             }
         }
 
-        // Fungsi untuk memicu update observer
-        function notifyObservers(dataType) {
-            if (dataObservers[dataType]) {
-                dataObservers[dataType].forEach(callback => {
-                    try {
-                        callback();
-                    } catch (error) {
-                        console.error('Error in observer callback:', error);
-                    }
-                });
-            }
+        // 5. LOAD DATA SAMPLE MINIMAL (tanpa saldo awal)
+        function loadMinimalSampleData() {
+            // Sample suppliers
+            suppliers.push(
+                'PT. Distributor ABC',
+                'CV. Maju Sejahtera',
+                'UD. Makmur Jaya'
+            );
+            
+            // Sample products dengan stok 0
+            inventory.push(
+                { id: 1, name: 'Sabun Mandi', stock: 0, buyPrice: 15000, sellPrice: 20000 },
+                { id: 2, name: 'Shampoo', stock: 0, buyPrice: 25000, sellPrice: 35000 },
+                { id: 3, name: 'Pasta Gigi', stock: 0, buyPrice: 8000, sellPrice: 12000 }
+            );
+            
+            // Sample users
+            users.push(
+                { id: 1, fullName: 'Admin Owner', username: 'owner', password: 'owner123', role: 'owner', status: 'active' },
+                { id: 2, fullName: 'Kasir Toko', username: 'kasir', password: 'kasir123', role: 'kasir', status: 'active' }
+            );
         }
 
-        // Membuat reactive arrays dengan Proxy
-        function createReactiveArray(array, dataType) {
-            return new Proxy(array, {
-                set: function(target, property, value, receiver) {
-                    const result = Reflect.set(target, property, value, receiver);
-                    if (!isNaN(property) || property === 'length') {
-                        notifyObservers(dataType);
-                        triggerDataUpdate();
+        // 6. PERBAIKAN FUNGSI deleteSalesTransaction() - Auto-save setelah hapus
+        function deleteSalesTransaction(id) {
+            const sale = salesTransactions.find(s => s.id === id);
+            if (sale) {
+                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus transaksi penjualan ini?`);
+                if (confirmDelete) {
+                    // Restore stock untuk semua item dalam transaksi
+                    sale.items.forEach(item => {
+                        const product = inventory.find(p => p.name === item.product);
+                        if (product) {
+                            product.stock += item.quantity;
+                        }
+                    });
+                    
+                    // Hapus transaksi
+                    const index = salesTransactions.findIndex(s => s.id === id);
+                    if (index !== -1) {
+                        salesTransactions.splice(index, 1);
+                        
+                        // Hapus record pemasukan yang terkait
+                        const incomeIndex = incomeRecords.findIndex(inc => 
+                            inc.description.includes('Penjualan produk') && 
+                            inc.amount === sale.total
+                        );
+                        if (incomeIndex !== -1) {
+                            incomeRecords.splice(incomeIndex, 1);
+                        }
+                        
+                        // PERBAIKAN: Auto-save setelah penghapusan
+                        autoSave();
+                        
+                        showNotification('Transaksi penjualan berhasil dihapus');
                     }
-                    return result;
-                },
-                deleteProperty: function(target, property) {
-                    const result = Reflect.deleteProperty(target, property);
-                    if (!isNaN(property)) {
-                        notifyObservers(dataType);
-                        triggerDataUpdate();
-                    }
-                    return result;
                 }
-            });
+            }
         }
+
+        // ================= FUNGSI UTAMA =================
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -1639,34 +1723,12 @@
                 }
             });
             
-            // Membuat data arrays menjadi reactive
-            purchaseOrders = createReactiveArray([], 'purchaseOrders');
-            inventory = createReactiveArray([], 'inventory');
-            salesTransactions = createReactiveArray([], 'salesTransactions');
-            incomeRecords = createReactiveArray([], 'incomeRecords');
-            expenseRecords = createReactiveArray([], 'expenseRecords');
-            utilityRecords = createReactiveArray([], 'utilityRecords');
-            suppliers = createReactiveArray([], 'suppliers');
-            users = createReactiveArray([], 'users');
-            
-            // Mendaftarkan observer untuk update otomatis
-            registerObserver('purchaseOrders', updatePurchaseStats);
-            registerObserver('inventory', updateInventoryStats);
-            registerObserver('salesTransactions', updateSalesStats);
-            registerObserver('incomeRecords', updateFinanceStats);
-            registerObserver('expenseRecords', updateFinanceStats);
-            registerObserver('utilityRecords', updateFinanceStats);
-            registerObserver('suppliers', updatePurchaseStats);
-            registerObserver('users', updateUserStats);
-            
-            // Load sample data for demonstration
-            loadSampleData();
+            // Load data
+            loadMinimalSampleData();
+            loadAutoSave();
             
             // Setup form event listeners
             setupFormListeners();
-            
-            // Load saved data
-            loadAutoSave();
             
             // Handle responsive design
             handleResize();
@@ -1765,7 +1827,7 @@
                 const quantity = parseInt(document.getElementById('quantity').value);
                 const unitPrice = parseFloat(document.getElementById('unitPrice').value);
                 
-                // Get supplier from either select or input
+                // Get supplier dari select atau input
                 let supplier = '';
                 const supplierSelect = document.getElementById('supplierSelect');
                 const supplierInput = document.getElementById('supplierInput');
@@ -1777,7 +1839,7 @@
                         return;
                     }
                     
-                    // Add new supplier to list if not exists
+                    // Tambah supplier baru jika belum ada
                     if (!suppliers.includes(supplier)) {
                         suppliers.push(supplier);
                         updateSupplierSelect();
@@ -1829,7 +1891,7 @@
                     return;
                 }
                 
-                // Find the PO to get the purchase price
+                // Cari PO untuk mendapatkan harga beli
                 const po = purchaseOrders.find(p => p.poNumber === poNumber);
                 if (!po) {
                     showNotification('PO tidak ditemukan!', true);
@@ -1838,11 +1900,11 @@
                 
                 const buyPrice = po.price;
                 
-                // Find product in inventory
+                // Cari produk di inventory
                 const productIndex = inventory.findIndex(item => item.name.toLowerCase() === receivedProduct.toLowerCase());
                 
                 if (productIndex !== -1) {
-                    // Calculate weighted average price if product already exists
+                    // Hitung harga rata-rata tertimbang jika produk sudah ada
                     const existingProduct = inventory[productIndex];
                     const totalCost = (existingProduct.stock * existingProduct.buyPrice) + (receivedQuantity * buyPrice);
                     const totalStock = existingProduct.stock + receivedQuantity;
@@ -1851,12 +1913,12 @@
                     inventory[productIndex].stock = totalStock;
                     inventory[productIndex].buyPrice = averageBuyPrice;
                     
-                    // Update sell price if provided
+                    // Update harga jual jika diberikan
                     if (newSellPrice && newSellPrice > 0) {
                         inventory[productIndex].sellPrice = newSellPrice;
                     }
                 } else {
-                    // Create new product
+                    // Buat produk baru
                     inventory.push({
                         id: Date.now(),
                         name: receivedProduct,
@@ -1866,12 +1928,12 @@
                     });
                 }
                 
-                // Update PO status
+                // Update status PO
                 po.status = 'completed';
                 
                 // Reset form
                 this.reset();
-                updatePoSelect(); // Update dropdown PO
+                updatePoSelect();
                 showNotification(`${receivedQuantity} unit ${receivedProduct} berhasil diterima`);
             });
 
@@ -1899,7 +1961,7 @@
                 const discountedPrice = originalPrice * (1 - discount / 100);
                 const total = discountedPrice * soldQuantity;
                 
-                // Add to current transaction
+                // Tambah ke transaksi saat ini
                 currentTransactionItems.push({
                     product: product.name,
                     quantity: soldQuantity,
@@ -1907,10 +1969,10 @@
                     total: total
                 });
                 
-                // Update stock
+                // Update stok
                 product.stock -= soldQuantity;
                 
-                // Update related components
+                // Update komponen terkait
                 updateTransactionDetails();
                 
                 // Reset form
@@ -1947,13 +2009,13 @@
                     return;
                 }
                 
-                // Check if username already exists
+                // Cek apakah username sudah ada
                 if (users.find(user => user.username === username)) {
                     showNotification('Username sudah digunakan!', true);
                     return;
                 }
                 
-                // Add new user
+                // Tambah user baru
                 users.push({
                     id: Date.now(),
                     fullName: fullName,
@@ -1969,66 +2031,7 @@
             });
         }
 
-        function triggerDataUpdate() {
-            // Auto-save data
-            autoSave();
-        }
-
-        // Load sample data for demonstration
-        function loadSampleData() {
-            // Sample suppliers
-            suppliers.push(
-                'PT. Distributor ABC',
-                'CV. Maju Sejahtera',
-                'UD. Makmur Jaya'
-            );
-            
-            // Sample products
-            inventory.push(
-                { id: 1, name: 'Sabun Mandi', stock: 50, buyPrice: 15000, sellPrice: 20000 },
-                { id: 2, name: 'Shampoo', stock: 30, buyPrice: 25000, sellPrice: 35000 },
-                { id: 3, name: 'Pasta Gigi', stock: 80, buyPrice: 8000, sellPrice: 12000 },
-                { id: 4, name: 'Sabun Cuci Piring', stock: 20, buyPrice: 12000, sellPrice: 18000 }
-            );
-            
-            // Sample purchase orders
-            purchaseOrders.push(
-                { id: 1001, poNumber: 'PO-001', date: new Date(), product: 'Sabun Mandi', supplier: 'PT. Distributor ABC', quantity: 50, price: 15000, total: 750000, status: 'pending' },
-                { id: 1002, poNumber: 'PO-002', date: new Date(), product: 'Shampoo', supplier: 'CV. Maju Sejahtera', quantity: 30, price: 25000, total: 750000, status: 'pending' },
-                { id: 1003, poNumber: 'PO-003', date: new Date(), product: 'Pasta Gigi', supplier: 'UD. Makmur Jaya', quantity: 100, price: 8000, total: 800000, status: 'completed' }
-            );
-            
-            // Sample sales transactions
-            salesTransactions.push(
-                { id: 2001, date: new Date(), items: [{ product: 'Sabun Mandi', quantity: 2, price: 20000, total: 40000 }], total: 40000, status: 'completed' }
-            );
-            
-            // Sample income records
-            incomeRecords.push(
-                { id: 3001, date: new Date(), source: 'sales', amount: 40000, description: 'Penjualan produk' }
-            );
-            
-            // Sample expense records
-            expenseRecords.push(
-                { id: 4001, date: new Date(), type: 'operational', amount: 50000, description: 'Biaya operasional toko' },
-                { id: 4002, date: new Date(), type: 'salary', amount: 2500000, description: 'Gaji karyawan bulan Oktober' }
-            );
-            
-            // Sample utility records
-            utilityRecords.push(
-                { id: 5001, date: new Date(), type: 'electricity', period: '2023-10', amount: 450000, description: 'Tagihan listrik bulan Oktober' },
-                { id: 5002, date: new Date(), type: 'water', period: '2023-10', amount: 120000, description: 'Tagihan air bulan Oktober' }
-            );
-            
-            // Sample users
-            users.push(
-                { id: 1, fullName: 'Admin Owner', username: 'owner', password: 'owner123', role: 'owner', status: 'active' },
-                { id: 2, fullName: 'Kasir Toko', username: 'kasir', password: 'kasir123', role: 'kasir', status: 'active' },
-                { id: 3, fullName: 'Manager Toko', username: 'manager', password: 'manager123', role: 'manager', status: 'active' }
-            );
-            // ✅ Tambahkan baris ini di sini, setelah semua data sample dimuat
-            updatePoSelect();
-        }
+        // ================= FUNGSI BANTU =================
 
         // Toggle sidebar
         function toggleSidebar() {
@@ -2039,7 +2042,7 @@
             mainContent.classList.toggle('expanded');
         }
 
-        // Login function with password
+        // Login function
         function login() {
             const loginBtn = document.getElementById('loginBtn');
             const originalText = loginBtn.textContent;
@@ -2113,7 +2116,6 @@
 
         // Setup UI based on user role
         function setupUserInterface() {
-            // Kontrol untuk section export/import di sidebar
             const ownerExportSection = document.getElementById('ownerExportSection');
             
             // Hide owner export section by default
@@ -2186,8 +2188,14 @@
 
         // Update all statistics
         function updateAllStats() {
-            // Stats sudah diupdate otomatis oleh observer
-            // Update charts dan tabel saja
+            updatePurchaseStats();
+            updateInventoryStats();
+            updateSalesStats();
+            updateFinanceStats();
+            updateProfitStats();
+            updateUserStats();
+            
+            // Update charts
             updateFinanceChart();
             updateProfitChart();
             
@@ -2204,7 +2212,7 @@
             updateSupplierSelect();
         }
 
-        // Purchase stats - Dipanggil oleh observer
+        // Purchase stats
         function updatePurchaseStats() {
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
@@ -2226,7 +2234,7 @@
             updateSupplierTable();
         }
 
-        // Inventory stats - Dipanggil oleh observer
+        // Inventory stats
         function updateInventoryStats() {
             const totalItems = inventory.length;
             const lowStockCount = inventory.filter(item => item.stock <= 10).length;
@@ -2241,7 +2249,7 @@
             updateStockTable();
         }
 
-        // Sales stats - Dipanggil oleh observer
+        // Sales stats
         function updateSalesStats() {
             const today = new Date().toDateString();
             const todaySales = salesTransactions.filter(sale => new Date(sale.date).toDateString() === today);
@@ -2258,24 +2266,7 @@
             updateSalesTable();
         }
 
-        // Finance stats - Dipanggil oleh observer
-        function updateFinanceStats() {
-            const totalIncome = incomeRecords.reduce((sum, inc) => sum + inc.amount, 0);
-            const totalExpense = expenseRecords.reduce((sum, exp) => sum + exp.amount, 0);
-            const totalUtility = utilityRecords.reduce((sum, util) => sum + util.amount, 0);
-            
-            // Hitung saldo kas yang benar (Pemasukan - Pengeluaran - Biaya Utilitas)
-            const cashBalance = totalIncome - totalExpense - totalUtility;
-            
-            document.getElementById('cashBalance').textContent = formatCurrency(cashBalance);
-            document.getElementById('customerReceivables').textContent = formatCurrency(getTotalReceivables());
-            document.getElementById('supplierPayables').textContent = formatCurrency(getTotalPayables());
-            
-            // Update charts
-            updateFinanceChart();
-        }
-
-        // Profit stats - Dipanggil oleh observer
+        // Profit stats
         function updateProfitStats() {
             const totalRevenue = getTotalRevenue();
             const totalCost = getTotalCost();
@@ -2289,7 +2280,7 @@
             calculateProfit();
         }
 
-        // User stats - Dipanggil oleh observer
+        // User stats
         function updateUserStats() {
             const totalUsers = users.length;
             const activeUsers = users.filter(user => user.status === 'active').length;
@@ -2321,7 +2312,6 @@
                     <td>${formatCurrency(po.price)}</td>
                     <td>${formatCurrency(po.total)}</td>
                     <td><span class="status-badge status-${po.status}">${po.status === 'pending' ? 'Menunggu' : 'Selesai'}</span></td>
-                    <td>
                 `;
                 tbody.appendChild(row);
             });
@@ -2479,7 +2469,6 @@
             });
         }
 
-        // PERBAIKAN: Fungsi updatePoSelect yang hanya menampilkan PO outstanding/aktif
         function updatePoSelect() {
             const select = document.getElementById('poNumber');
             if (!select) return;
@@ -2638,14 +2627,6 @@
 
         function getUtilityCost() {
             return utilityRecords.reduce((sum, util) => sum + util.amount, 0);
-        }
-
-        function getTotalReceivables() {
-            return salesTransactions.filter(sale => sale.status === 'pending').reduce((sum, sale) => sum + sale.total, 0);
-        }
-
-        function getTotalPayables() {
-            return purchaseOrders.filter(po => po.status === 'pending').reduce((sum, po) => sum + po.total, 0);
         }
 
         function calculateProfit() {
@@ -2918,15 +2899,6 @@
             }
         }
 
-        function updatePoStatus(poNumber) {
-            const po = purchaseOrders.find(p => p.poNumber === poNumber);
-            if (po) {
-                po.status = 'completed';
-                updatePoSelect(); // Update dropdown PO
-                showNotification(`PO ${po.poNumber} telah dikonfirmasi`);
-            }
-        }
-
         function editProduct(id) {
             const product = inventory.find(p => p.id === id);
             if (product) {
@@ -2947,43 +2919,10 @@
             if (product) {
                 const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus produk ${product.name}?`);
                 if (confirmDelete) {
-                    // Menggunakan filter untuk menghapus
                     const index = inventory.findIndex(p => p.id === id);
                     if (index !== -1) {
                         inventory.splice(index, 1);
                         showNotification(`Produk ${product.name} berhasil dihapus`);
-                    }
-                }
-            }
-        }
-
-        function deleteSalesTransaction(id) {
-            const sale = salesTransactions.find(s => s.id === id);
-            if (sale) {
-                const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus transaksi penjualan ini?`);
-                if (confirmDelete) {
-                    // Restore stock for all items in the transaction
-                    sale.items.forEach(item => {
-                        const product = inventory.find(p => p.name === item.product);
-                        if (product) {
-                            product.stock += item.quantity;
-                        }
-                    });
-                    
-                    // Remove the transaction
-                    const index = salesTransactions.findIndex(s => s.id === id);
-                    if (index !== -1) {
-                        salesTransactions.splice(index, 1);
-                        
-                        // Remove corresponding income record
-                        const incomeIndex = incomeRecords.findIndex(inc => 
-                            inc.description.includes(sale.items.map(item => item.product).join(','))
-                        );
-                        if (incomeIndex !== -1) {
-                            incomeRecords.splice(incomeIndex, 1);
-                        }
-                        
-                        showNotification('Transaksi penjualan berhasil dihapus');
                     }
                 }
             }
@@ -3146,13 +3085,11 @@
 
         // Export to Excel
         function exportToExcel() {
-            // Cek apakah user memiliki akses
             if (!currentUser) {
                 showNotification('Harap login terlebih dahulu!', true);
                 return;
             }
             
-            // Semua role bisa export Excel
             try {
                 // Create workbook
                 const workbook = XLSX.utils.book_new();
@@ -3274,7 +3211,7 @@
                     
                     // Validate data structure
                     if (data.purchaseOrders && data.inventory && data.salesTransactions) {
-                        // Mengganti data arrays dengan data baru
+                        // Replace data arrays with new data
                         purchaseOrders.splice(0, purchaseOrders.length, ...data.purchaseOrders);
                         inventory.splice(0, inventory.length, ...data.inventory);
                         salesTransactions.splice(0, salesTransactions.length, ...data.salesTransactions);
@@ -3327,7 +3264,7 @@
                     const daysDiff = (new Date() - saveDate) / (1000 * 60 * 60 * 24);
                     
                     if (daysDiff < 7) {
-                        // Mengganti data arrays dengan data yang disimpan
+                        // Replace data arrays with saved data
                         if (data.purchaseOrders) purchaseOrders.splice(0, purchaseOrders.length, ...data.purchaseOrders);
                         if (data.inventory) inventory.splice(0, inventory.length, ...data.inventory);
                         if (data.salesTransactions) salesTransactions.splice(0, salesTransactions.length, ...data.salesTransactions);

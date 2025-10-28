@@ -2323,9 +2323,7 @@
                     <td>${formatCurrency(po.total)}</td>
                     <td><span class="status-badge status-${po.status}">${po.status === 'pending' ? 'Menunggu' : 'Selesai'}</span></td>
                     <td>
-                        ${po.status === 'pending' ? 
-                            '<span style="color: #856404; font-size: 12px;">Via Penerimaan</span>' : 
-                            '<span style="color: #155724; font-size: 12px;">Selesai</span>'
+                        <button class="btn btn-secondary btn-small" onclick="updatePoStatus('${po.poNumber}')">Konfirmasi</button>
                     </td>
                 `;
                 tbody.appendChild(row);

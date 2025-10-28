@@ -1062,7 +1062,6 @@
                                     <th>Harga Satuan</th>
                                     <th>Total</th>
                                     <th>Status</th>
-                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -2323,8 +2322,6 @@
                     <td>${formatCurrency(po.total)}</td>
                     <td><span class="status-badge status-${po.status}">${po.status === 'pending' ? 'Menunggu' : 'Selesai'}</span></td>
                     <td>
-                        <button class="btn btn-secondary btn-small" onclick="updatePoStatus('${po.poNumber}')">Konfirmasi</button>
-                    </td>
                 `;
                 tbody.appendChild(row);
             });

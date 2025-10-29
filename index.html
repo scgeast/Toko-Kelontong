@@ -741,21 +741,69 @@
             color: #212529;
         }
         
-        /* Register Form Styles */
-        .register-link {
-            text-align: center;
+        /* Troubleshoot Info */
+        .troubleshoot-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
             margin-top: 15px;
             font-size: 14px;
         }
         
-        .register-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
+        .troubleshoot-info h4 {
+            color: #856404;
+            margin-bottom: 10px;
         }
         
-        .register-link a:hover {
-            text-decoration: underline;
+        .troubleshoot-info ul {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .troubleshoot-info li {
+            margin-bottom: 5px;
+        }
+        
+        .admin-override {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e2e3e5;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .admin-override button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        
+        .admin-override button:hover {
+            background: #5a6268;
+        }
+        
+        .firebase-setup-guide {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .firebase-setup-guide h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+        
+        .firebase-setup-guide ol {
+            padding-left: 20px;
+            margin-bottom: 10px;
         }
         
         /* Responsive Design */
@@ -959,47 +1007,42 @@
             <h2><i class="fas fa-store"></i> Login Aplikasi Pertokoan</h2>
             <div class="form-group">
                 <label>Email:</label>
-                <input type="email" id="loginEmail" placeholder="Masukkan email" autocomplete="email">
+                <input type="email" id="loginEmail" placeholder="Masukkan email" autocomplete="email" value="bookingeast0@gmail.com">
             </div>
             <div class="form-group">
                 <label>Password:</label>
-                <input type="password" id="loginPassword" placeholder="Masukkan password" autocomplete="current-password">
+                <input type="password" id="loginPassword" placeholder="Masukkan password" autocomplete="current-password" value="booking123">
             </div>
             <button id="loginBtn" class="btn login-btn">Login</button>
-            <div class="register-link">
-                Belum punya akun? <a href="#" onclick="showRegisterForm()">Daftar di sini</a>
+            
+            <!-- Informasi Troubleshooting -->
+            <div class="troubleshoot-info">
+                <h4><i class="fas fa-info-circle"></i> Masalah Login?</h4>
+                <ul>
+                    <li>Pastikan email dan password sudah benar</li>
+                    <li>Pastikan user sudah terdaftar di Firebase Authentication</li>
+                    <li>Pastikan Email/Password provider sudah diaktifkan</li>
+                </ul>
+                <p><strong>Email yang terdaftar:</strong> bookingeast0@gmail.com</p>
             </div>
-        </div>
-
-        <!-- Register Form -->
-        <div id="registerForm" class="login-card hidden">
-            <h2><i class="fas fa-user-plus"></i> Daftar Akun Baru</h2>
-            <div class="form-group">
-                <label>Nama Lengkap:</label>
-                <input type="text" id="registerName" placeholder="Masukkan nama lengkap">
+            
+            <!-- Firebase Setup Guide -->
+            <div class="firebase-setup-guide">
+                <h4><i class="fas fa-cog"></i> Setup Firebase:</h4>
+                <ol>
+                    <li>Buka Firebase Console</li>
+                    <li>Pilih project <strong>app-retail-e51c3</strong></li>
+                    <li>Authentication → Sign-in method → Email/Password → Enable</li>
+                    <li>Authentication → Users → Add user (bookingeast0@gmail.com)</li>
+                </ol>
             </div>
-            <div class="form-group">
-                <label>Email:</label>
-                <input type="email" id="registerEmail" placeholder="Masukkan email" autocomplete="email">
-            </div>
-            <div class="form-group">
-                <label>Password:</label>
-                <input type="password" id="registerPassword" placeholder="Masukkan password (min. 6 karakter)" autocomplete="new-password">
-            </div>
-            <div class="form-group">
-                <label>Konfirmasi Password:</label>
-                <input type="password" id="registerConfirmPassword" placeholder="Konfirmasi password" autocomplete="new-password">
-            </div>
-            <div class="form-group">
-                <label>Role:</label>
-                <select id="registerRole">
-                    <option value="kasir">Kasir</option>
-                    <option value="manager">Manager</option>
-                </select>
-            </div>
-            <button id="registerBtn" class="btn login-btn">Daftar</button>
-            <div class="register-link">
-                Sudah punya akun? <a href="#" onclick="showLoginForm()">Login di sini</a>
+            
+            <!-- Admin Override untuk testing -->
+            <div class="admin-override">
+                <p><strong>Testing Mode (Jika Firebase bermasalah):</strong></p>
+                <button onclick="testLogin('owner')">Login sebagai Owner</button>
+                <button onclick="testLogin('manager')">Login sebagai Manager</button>
+                <button onclick="testLogin('kasir')">Login sebagai Kasir</button>
             </div>
         </div>
     </div>
@@ -1085,6 +1128,7 @@
                 <p>Sistem Manajemen Toko Terintegrasi</p>
                 <div class="user-info">
                     <span id="currentUser">User</span>
+                    <span id="userRole" class="user-role-badge"></span>
                     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </header>
@@ -1704,58 +1748,22 @@
 
         // Initialize Firebase
         let db, auth;
+        let firebaseInitialized = false;
+
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
             auth = firebase.auth();
-            updateFirebaseStatus('Terhubung', 'success');
+            firebaseInitialized = true;
+            updateFirebaseStatus('Firebase Terhubung', 'success');
+            console.log('Firebase initialized successfully');
             
             // Check auth state
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     // User is signed in
                     console.log('User logged in:', user.email);
-                    loadUserData(user.uid).then(userData => {
-                        if (userData) {
-                            currentUser = {
-                                uid: user.uid,
-                                email: user.email,
-                                ...userData
-                            };
-                            document.getElementById('currentUser').textContent = userData.fullName || user.email;
-                            
-                            // Hide login screen, show app
-                            document.getElementById('loginScreen').style.display = 'none';
-                            document.getElementById('app').style.display = 'block';
-                            
-                            // Show sidebar after login
-                            const sidebar = document.getElementById('sidebar');
-                            sidebar.style.display = 'block';
-                            sidebar.classList.remove('hidden');
-                            
-                            // Add margin to main content
-                            const mainContent = document.querySelector('.main-content');
-                            mainContent.classList.add('with-sidebar');
-                            
-                            // Show menu toggle button
-                            document.querySelector('.menu-toggle').style.display = 'block';
-                            
-                            // Set up UI based on user role
-                            setupUserInterface();
-                            
-                            // Initialize data after login
-                            updateAllStats();
-                            initializeCharts();
-                            
-                            // Load sales data from Firebase
-                            loadSalesFromFirebase().then(sales => {
-                                salesTransactions = sales;
-                                updateSalesTable();
-                            });
-                            
-                            showNotification(`Login sebagai ${userData.fullName || user.email} berhasil`);
-                        }
-                    });
+                    handleSuccessfulLogin(user);
                 } else {
                     // User is signed out
                     console.log('User signed out');
@@ -1764,7 +1772,91 @@
             
         } catch (error) {
             console.error('Firebase initialization error:', error);
-            updateFirebaseStatus('Gagal Terhubung', 'error');
+            updateFirebaseStatus('Gagal Terhubung ke Firebase', 'error');
+            showNotification('Error: Gagal terhubung ke database Firebase', true);
+        }
+
+        // Handle successful login
+        async function handleSuccessfulLogin(user) {
+            let userData = await loadUserData(user.uid);
+            
+            if (!userData) {
+                // User data not found in Firestore, create default
+                console.log('User data not found, creating default...');
+                userData = await createDefaultUserData(user);
+            }
+            
+            if (userData) {
+                currentUser = {
+                    uid: user.uid,
+                    email: user.email,
+                    ...userData
+                };
+                
+                document.getElementById('currentUser').textContent = userData.fullName || user.email;
+                
+                // Set user role badge
+                const userRoleElement = document.getElementById('userRole');
+                userRoleElement.textContent = userData.role;
+                userRoleElement.className = `user-role-badge role-${userData.role}`;
+                
+                // Hide login screen, show app
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                
+                // Show sidebar after login
+                const sidebar = document.getElementById('sidebar');
+                sidebar.style.display = 'block';
+                sidebar.classList.remove('hidden');
+                
+                // Add margin to main content
+                const mainContent = document.querySelector('.main-content');
+                mainContent.classList.add('with-sidebar');
+                
+                // Show menu toggle button
+                document.querySelector('.menu-toggle').style.display = 'block';
+                
+                // Set up UI based on user role
+                setupUserInterface();
+                
+                // Initialize data after login
+                updateAllStats();
+                initializeCharts();
+                
+                // Load sales data from Firebase
+                loadSalesFromFirebase().then(sales => {
+                    salesTransactions = sales;
+                    updateSalesTable();
+                });
+                
+                showNotification(`Login sebagai ${userData.fullName || user.email} berhasil`);
+            }
+        }
+
+        // Create default user data if not exists
+        async function createDefaultUserData(user) {
+            if (!db) {
+                console.error('Firestore not available');
+                return null;
+            }
+            
+            try {
+                const userData = {
+                    fullName: user.email.split('@')[0],
+                    email: user.email,
+                    role: 'owner', // Default role
+                    status: 'active',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('users').doc(user.uid).set(userData);
+                console.log('Default user data created for:', user.email);
+                return userData;
+            } catch (error) {
+                console.error('Error creating default user data:', error);
+                return null;
+            }
         }
 
         // Firebase status indicator
@@ -1773,7 +1865,7 @@
             const statusText = document.getElementById('firebaseStatusText');
             
             if (statusEl && statusText) {
-                statusText.textContent = `Firebase: ${message}`;
+                statusText.textContent = message;
                 statusEl.className = `firebase-status ${type}`;
                 statusEl.classList.remove('hidden');
             }
@@ -1789,7 +1881,9 @@
             }
             
             try {
+                console.log('Attempting login with:', email);
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('Login successful:', userCredential.user.email);
                 return userCredential.user;
             } catch (error) {
                 console.error('Login error:', error);
@@ -1803,10 +1897,13 @@
                         errorMessage = 'Akun ini telah dinonaktifkan';
                         break;
                     case 'auth/user-not-found':
-                        errorMessage = 'Email tidak terdaftar';
+                        errorMessage = 'Email tidak terdaftar di sistem';
                         break;
                     case 'auth/wrong-password':
                         errorMessage = 'Password salah';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage = 'Koneksi jaringan bermasalah';
                         break;
                     default:
                         errorMessage = error.message;
@@ -1872,13 +1969,81 @@
                 if (doc.exists) {
                     return doc.data();
                 } else {
-                    console.log('No user data found');
+                    console.log('No user data found in Firestore');
                     return null;
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
                 return null;
             }
+        }
+
+        // ================= TESTING FUNCTIONS =================
+        
+        // Test login function for development
+        function testLogin(role) {
+            console.log('Test login as:', role);
+            
+            // Create test user data
+            const testUsers = {
+                owner: {
+                    uid: 'test-owner-001',
+                    email: 'bookingeast0@gmail.com',
+                    fullName: 'Pemilik Toko',
+                    role: 'owner',
+                    status: 'active'
+                },
+                manager: {
+                    uid: 'test-manager-001',
+                    email: 'manager@toko.com',
+                    fullName: 'Manager Toko',
+                    role: 'manager',
+                    status: 'active'
+                },
+                kasir: {
+                    uid: 'test-kasir-001',
+                    email: 'kasir@toko.com',
+                    fullName: 'Kasir Toko',
+                    role: 'kasir',
+                    status: 'active'
+                }
+            };
+            
+            const testUser = testUsers[role];
+            if (!testUser) return;
+            
+            currentUser = testUser;
+            document.getElementById('currentUser').textContent = testUser.fullName;
+            
+            // Set user role badge
+            const userRoleElement = document.getElementById('userRole');
+            userRoleElement.textContent = testUser.role;
+            userRoleElement.className = `user-role-badge role-${testUser.role}`;
+            
+            // Hide login screen, show app
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            
+            // Show sidebar after login
+            const sidebar = document.getElementById('sidebar');
+            sidebar.style.display = 'block';
+            sidebar.classList.remove('hidden');
+            
+            // Add margin to main content
+            const mainContent = document.querySelector('.main-content');
+            mainContent.classList.add('with-sidebar');
+            
+            // Show menu toggle button
+            document.querySelector('.menu-toggle').style.display = 'block';
+            
+            // Set up UI based on user role
+            setupUserInterface();
+            
+            // Initialize data after login
+            updateAllStats();
+            initializeCharts();
+            
+            showNotification(`Login sebagai ${testUser.fullName} berhasil (Testing Mode)`);
         }
 
         // ================= FIREBASE FIRESTORE FUNCTIONS =================
@@ -1986,26 +2151,12 @@
         let currentTransactionItems = [];
         let currentUser = null;
 
-        // ================= FORM SWITCHING =================
-        function showLoginForm() {
-            document.getElementById('loginForm').classList.remove('hidden');
-            document.getElementById('registerForm').classList.add('hidden');
-        }
-
-        function showRegisterForm() {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.remove('hidden');
-        }
-
         // ================= FUNGSI UTAMA =================
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
             // Set up login
             document.getElementById('loginBtn').addEventListener('click', login);
-            
-            // Set up register
-            document.getElementById('registerBtn').addEventListener('click', register);
             
             // Enter key support for login
             document.getElementById('loginPassword').addEventListener('keypress', function(e) {
@@ -2017,13 +2168,6 @@
             document.getElementById('loginEmail').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     document.getElementById('loginPassword').focus();
-                }
-            });
-            
-            // Enter key support for register
-            document.getElementById('registerConfirmPassword').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    register();
                 }
             });
             
@@ -2075,63 +2219,6 @@
             loginBtn.disabled = false;
         }
 
-        // Register function
-        async function register() {
-            const registerBtn = document.getElementById('registerBtn');
-            const originalText = registerBtn.textContent;
-            
-            // Show loading state
-            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mendaftar...';
-            registerBtn.disabled = true;
-            
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('registerConfirmPassword').value;
-            const role = document.getElementById('registerRole').value;
-            
-            if (!name || !email || !password || !confirmPassword) {
-                showNotification('Harap isi semua field!', true);
-                registerBtn.innerHTML = originalText;
-                registerBtn.disabled = false;
-                return;
-            }
-            
-            if (password !== confirmPassword) {
-                showNotification('Password dan konfirmasi password tidak cocok!', true);
-                registerBtn.innerHTML = originalText;
-                registerBtn.disabled = false;
-                return;
-            }
-            
-            if (password.length < 6) {
-                showNotification('Password harus minimal 6 karakter!', true);
-                registerBtn.innerHTML = originalText;
-                registerBtn.disabled = false;
-                return;
-            }
-            
-            const userData = {
-                fullName: name,
-                email: email,
-                role: role,
-                status: 'active'
-            };
-            
-            const user = await registerWithEmail(email, password, userData);
-            
-            if (user) {
-                showNotification('Pendaftaran berhasil! Silakan login.');
-                showLoginForm();
-                // Clear register form
-                document.getElementById('registerForm').reset();
-            }
-            
-            // Reset register button
-            registerBtn.innerHTML = originalText;
-            registerBtn.disabled = false;
-        }
-
         // Logout function
         function logout() {
             if (auth) {
@@ -2152,6 +2239,13 @@
                     console.error('Logout error:', error);
                     showNotification('Error saat logout', true);
                 });
+            } else {
+                // Fallback logout for test users
+                currentUser = null;
+                document.getElementById('app').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'flex';
+                showNotification('Logout berhasil');
             }
         }
 
@@ -2170,12 +2264,11 @@
             });
         }
 
-        // ... (sisa kode JavaScript tetap sama seperti sebelumnya)
-
         // Setup UI based on user role
         function setupUserInterface() {
             const ownerExportSection = document.getElementById('ownerExportSection');
             const salesActionHeader = document.getElementById('salesActionHeader');
+            const userManagementTab = document.querySelector('.sidebar-item[onclick="showTab(\'users\')"]');
             
             // Hide owner export section by default
             ownerExportSection.classList.add('hidden');
@@ -2183,9 +2276,10 @@
             
             // Show tabs based on user role
             if (currentUser.role === 'kasir') {
-                // Kasir tidak bisa akses export/import JSON
+                // Kasir tidak bisa akses export/import JSON dan manajemen user
                 ownerExportSection.classList.add('hidden');
                 salesActionHeader.classList.add('hidden');
+                userManagementTab.style.display = 'none';
                 
                 // Show only sales tab
                 showTab('sales');
@@ -2193,10 +2287,12 @@
                 // Owner bisa akses semua fitur export/import
                 ownerExportSection.classList.remove('hidden');
                 salesActionHeader.classList.remove('hidden');
+                userManagementTab.style.display = 'flex';
             } else if (currentUser.role === 'manager') {
-                // Manager tidak bisa akses export/import JSON
+                // Manager tidak bisa akses export/import JSON, tapi bisa akses manajemen user
                 ownerExportSection.classList.add('hidden');
                 salesActionHeader.classList.remove('hidden');
+                userManagementTab.style.display = 'flex';
             }
         }
 
@@ -3020,6 +3116,674 @@
                 }
             }
         });
+
+        // ================= FUNGSI BANTUAN =================
+        
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+        
+        // Format date
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('id-ID');
+        }
+        
+        // Show notification
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            if (!notification || !notificationText) return;
+            
+            notificationText.textContent = message;
+            notification.className = 'notification';
+            
+            if (isError) {
+                notification.classList.add('error');
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (sidebar.classList.contains('hidden')) {
+                sidebar.classList.remove('hidden');
+                mainContent.classList.add('with-sidebar');
+            } else {
+                sidebar.classList.add('hidden');
+                mainContent.classList.remove('with-sidebar');
+            }
+        }
+        
+        // Show tab
+        function showTab(tabId) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all sidebar items
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            sidebarItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(tabId);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                
+                // Add active class to corresponding sidebar item
+                const correspondingSidebarItem = document.querySelector(`.sidebar-item[onclick="showTab('${tabId}')"]`);
+                if (correspondingSidebarItem) {
+                    correspondingSidebarItem.classList.add('active');
+                }
+                
+                // Refresh tab content
+                refreshActiveTab(tabId);
+            }
+        }
+        
+        // Load minimal sample data
+        function loadMinimalSampleData() {
+            // Sample inventory
+            if (inventory.length === 0) {
+                inventory = [
+                    {
+                        id: 1,
+                        name: "Beras Premium",
+                        stock: 50,
+                        buyPrice: 12000,
+                        sellPrice: 15000
+                    },
+                    {
+                        id: 2,
+                        name: "Minyak Goreng",
+                        stock: 30,
+                        buyPrice: 18000,
+                        sellPrice: 22000
+                    },
+                    {
+                        id: 3,
+                        name: "Gula Pasir",
+                        stock: 40,
+                        buyPrice: 12000,
+                        sellPrice: 15000
+                    }
+                ];
+            }
+            
+            // Sample suppliers
+            if (suppliers.length === 0) {
+                suppliers = [
+                    "PT. Distributor ABC",
+                    "CV. Maju Sejahtera",
+                    "UD. Makmur Jaya"
+                ];
+            }
+            
+            // Sample users
+            if (users.length === 0) {
+                users = [
+                    {
+                        id: 1,
+                        fullName: "Admin Owner",
+                        email: "bookingeast0@gmail.com",
+                        role: "owner",
+                        status: "active"
+                    }
+                ];
+            }
+        }
+        
+        // Setup form listeners
+        function setupFormListeners() {
+            // Purchase plan form
+            const purchasePlanForm = document.getElementById('purchasePlanForm');
+            if (purchasePlanForm) {
+                purchasePlanForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    addPurchaseOrder();
+                });
+            }
+            
+            // Sale form
+            const saleForm = document.getElementById('saleForm');
+            if (saleForm) {
+                saleForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    addToTransaction();
+                });
+            }
+            
+            // User form
+            const userForm = document.getElementById('userForm');
+            if (userForm) {
+                userForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    addUser();
+                });
+            }
+        }
+        
+        // Add purchase order
+        function addPurchaseOrder() {
+            const productName = document.getElementById('productName').value;
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const unitPrice = parseFloat(document.getElementById('unitPrice').value);
+            let supplier = document.getElementById('supplierSelect').value;
+            
+            // Check if using manual input
+            if (supplier === 'other') {
+                supplier = document.getElementById('supplierInput').value;
+            }
+            
+            if (!productName || !quantity || !unitPrice || !supplier) {
+                showNotification('Harap isi semua field!', true);
+                return;
+            }
+            
+            // Add to suppliers if not exists
+            if (!suppliers.includes(supplier)) {
+                suppliers.push(supplier);
+                updateSupplierSelect();
+            }
+            
+            const poNumber = 'PO-' + Date.now();
+            const total = quantity * unitPrice;
+            
+            const purchaseOrder = {
+                id: Date.now(),
+                poNumber: poNumber,
+                date: new Date(),
+                product: productName,
+                supplier: supplier,
+                quantity: quantity,
+                price: unitPrice,
+                total: total,
+                status: 'pending'
+            };
+            
+            purchaseOrders.push(purchaseOrder);
+            
+            // Reset form
+            document.getElementById('purchasePlanForm').reset();
+            document.getElementById('productInfo').classList.add('hidden');
+            
+            showNotification('Purchase Order berhasil ditambahkan');
+            
+            // Update tables
+            updatePoTable();
+            updateSupplierTable();
+        }
+        
+        // Add to transaction
+        function addToTransaction() {
+            const productSelect = document.getElementById('soldProduct');
+            const productName = productSelect.value;
+            const quantity = parseInt(document.getElementById('soldQuantity').value);
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            
+            if (!productName || !quantity) {
+                showNotification('Harap pilih produk dan isi kuantitas!', true);
+                return;
+            }
+            
+            // Find product in inventory
+            const product = inventory.find(p => p.name === productName);
+            if (!product) {
+                showNotification('Produk tidak ditemukan!', true);
+                return;
+            }
+            
+            // Check stock
+            if (product.stock < quantity) {
+                showNotification(`Stok ${product.name} tidak mencukupi! Stok tersedia: ${product.stock}`, true);
+                return;
+            }
+            
+            // Calculate price with discount
+            const unitPrice = product.sellPrice;
+            const discountAmount = (unitPrice * quantity * discount) / 100;
+            const total = (unitPrice * quantity) - discountAmount;
+            
+            // Add to current transaction
+            currentTransactionItems.push({
+                product: productName,
+                quantity: quantity,
+                unitPrice: unitPrice,
+                discount: discount,
+                discountAmount: discountAmount,
+                total: total
+            });
+            
+            // Reduce stock
+            product.stock -= quantity;
+            
+            // Reset form
+            document.getElementById('soldQuantity').value = '';
+            document.getElementById('discount').value = '0';
+            
+            showNotification(`${quantity} ${productName} ditambahkan ke transaksi`);
+            
+            // Update transaction details
+            updateTransactionDetails();
+        }
+        
+        // Add user
+        async function addUser() {
+            // Only owner can add users
+            if (!currentUser || currentUser.role !== 'owner') {
+                showNotification('Hanya owner yang dapat menambah user!', true);
+                return;
+            }
+            
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('newEmail').value;
+            const password = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const role = document.getElementById('userRoleSelect').value;
+            
+            if (!fullName || !email || !password || !confirmPassword) {
+                showNotification('Harap isi semua field!', true);
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showNotification('Password dan konfirmasi password tidak cocok!', true);
+                return;
+            }
+            
+            if (password.length < 6) {
+                showNotification('Password harus minimal 6 karakter!', true);
+                return;
+            }
+            
+            const userData = {
+                fullName: fullName,
+                email: email,
+                role: role,
+                status: 'active'
+            };
+            
+            const user = await registerWithEmail(email, password, userData);
+            
+            if (user) {
+                // Add to local users array
+                users.push({
+                    id: Date.now(),
+                    ...userData
+                });
+                
+                // Reset form
+                document.getElementById('userForm').reset();
+                
+                showNotification('User berhasil ditambahkan');
+                
+                // Update users table
+                updateUsersTable();
+            }
+        }
+        
+        // Update all stats
+        function updateAllStats() {
+            // Purchase stats
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const totalPurchaseMonth = purchaseOrders
+                .filter(po => {
+                    const poDate = new Date(po.date);
+                    return poDate.getMonth() === currentMonth && poDate.getFullYear() === currentYear;
+                })
+                .reduce((sum, po) => sum + po.total, 0);
+            
+            document.getElementById('totalPurchaseMonth').textContent = formatCurrency(totalPurchaseMonth);
+            document.getElementById('totalPOItems').textContent = purchaseOrders.filter(po => po.status === 'pending').length;
+            document.getElementById('activeSuppliers').textContent = suppliers.length;
+            
+            // Inventory stats
+            document.getElementById('totalInventoryItems').textContent = inventory.length;
+            document.getElementById('lowStockItems').textContent = inventory.filter(item => item.stock <= 10).length;
+            const totalInventoryValue = inventory.reduce((sum, item) => sum + (item.stock * item.buyPrice), 0);
+            document.getElementById('totalInventoryValue').textContent = formatCurrency(totalInventoryValue);
+            
+            // Sales stats
+            const today = new Date().toDateString();
+            const todayTransactions = salesTransactions.filter(sale => new Date(sale.date).toDateString() === today);
+            document.getElementById('todayTransactions').textContent = todayTransactions.length;
+            const todaySales = todayTransactions.reduce((sum, sale) => sum + sale.total, 0);
+            document.getElementById('todaySales').textContent = formatCurrency(todaySales);
+            document.getElementById('activeCustomers').textContent = '0'; // Placeholder
+            
+            // Finance stats
+            const totalIncome = incomeRecords.reduce((sum, inc) => sum + inc.amount, 0);
+            const totalExpense = expenseRecords.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalUtility = utilityRecords.reduce((sum, util) => sum + util.amount, 0);
+            const cashBalance = totalIncome - totalExpense - totalUtility;
+            document.getElementById('cashBalance').textContent = formatCurrency(cashBalance);
+            document.getElementById('customerReceivables').textContent = formatCurrency(0); // Placeholder
+            document.getElementById('supplierPayables').textContent = formatCurrency(0); // Placeholder
+            
+            // Profit stats
+            document.getElementById('totalRevenue').textContent = formatCurrency(getTotalRevenue());
+            document.getElementById('totalCost').textContent = formatCurrency(getTotalCost());
+            document.getElementById('netProfit').textContent = formatCurrency(getTotalRevenue() - getTotalCost());
+            
+            // Users stats
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('activeUsers').textContent = users.filter(u => u.status === 'active').length;
+            document.getElementById('adminUsers').textContent = users.filter(u => u.role === 'owner').length;
+        }
+        
+        // Update transaction details
+        function updateTransactionDetails() {
+            const transactionDetails = document.getElementById('transactionDetails');
+            const subtotalElement = document.getElementById('subtotal');
+            const discountAmountElement = document.getElementById('discountAmount');
+            const totalAmountElement = document.getElementById('totalAmount');
+            
+            if (!transactionDetails) return;
+            
+            let html = '';
+            let subtotal = 0;
+            let totalDiscount = 0;
+            
+            currentTransactionItems.forEach((item, index) => {
+                subtotal += item.unitPrice * item.quantity;
+                totalDiscount += item.discountAmount;
+                
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee;">
+                        <div>
+                            <strong>${item.product}</strong><br>
+                            <small>${item.quantity} x ${formatCurrency(item.unitPrice)}</small>
+                            ${item.discount > 0 ? `<br><small>Diskon: ${item.discount}%</small>` : ''}
+                        </div>
+                        <div>
+                            ${formatCurrency(item.total)}
+                            <button class="btn btn-small btn-danger" onclick="removeFromTransaction(${index})" style="margin-left: 10px;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (currentTransactionItems.length === 0) {
+                html = '<p style="text-align: center; color: #999;">Belum ada item dalam transaksi</p>';
+            }
+            
+            transactionDetails.innerHTML = html;
+            subtotalElement.textContent = formatCurrency(subtotal);
+            discountAmountElement.textContent = formatCurrency(totalDiscount);
+            totalAmountElement.textContent = formatCurrency(subtotal - totalDiscount);
+        }
+        
+        // Remove from transaction
+        function removeFromTransaction(index) {
+            if (index >= 0 && index < currentTransactionItems.length) {
+                const item = currentTransactionItems[index];
+                
+                // Restore stock
+                const product = inventory.find(p => p.name === item.product);
+                if (product) {
+                    product.stock += item.quantity;
+                }
+                
+                currentTransactionItems.splice(index, 1);
+                updateTransactionDetails();
+                showNotification('Item dihapus dari transaksi');
+            }
+        }
+        
+        // Update tables
+        function updatePoTable() {
+            const poTable = document.getElementById('poTable');
+            if (!poTable) return;
+            
+            const tbody = poTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            purchaseOrders.forEach(po => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${po.poNumber}</td>
+                    <td>${formatDate(po.date)}</td>
+                    <td>${po.product}</td>
+                    <td>${po.supplier}</td>
+                    <td>${po.quantity}</td>
+                    <td>${formatCurrency(po.price)}</td>
+                    <td>${formatCurrency(po.total)}</td>
+                    <td><span class="status-badge ${po.status === 'pending' ? 'status-pending' : 'status-completed'}">${po.status === 'pending' ? 'Menunggu' : 'Selesai'}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateSupplierTable() {
+            const supplierTable = document.getElementById('supplierTable');
+            if (!supplierTable) return;
+            
+            const tbody = supplierTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            suppliers.forEach(supplier => {
+                const supplierPOs = purchaseOrders.filter(po => po.supplier === supplier);
+                const totalPOs = supplierPOs.length;
+                const totalValue = supplierPOs.reduce((sum, po) => sum + po.total, 0);
+                const activePOs = supplierPOs.filter(po => po.status === 'pending').length;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${supplier}</td>
+                    <td>${totalPOs}</td>
+                    <td>${formatCurrency(totalValue)}</td>
+                    <td><span class="status-badge ${activePOs > 0 ? 'status-pending' : 'status-completed'}">${activePOs > 0 ? 'Aktif' : 'Tidak Aktif'}</span></td>
+                    <td>
+                        <button class="btn btn-small btn-danger" onclick="deleteSupplier('${supplier}')">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateStockTable() {
+            const stockTable = document.getElementById('stockTable');
+            if (!stockTable) return;
+            
+            const tbody = stockTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            // Update product select for sales
+            const soldProductSelect = document.getElementById('soldProduct');
+            if (soldProductSelect) {
+                soldProductSelect.innerHTML = '<option value="">Pilih Produk</option>';
+                inventory.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.name;
+                    option.textContent = `${product.name} (Stok: ${product.stock})`;
+                    soldProductSelect.appendChild(option);
+                });
+            }
+            
+            inventory.forEach(product => {
+                let status, statusClass;
+                if (product.stock === 0) {
+                    status = 'Kosong';
+                    statusClass = 'status-out';
+                } else if (product.stock <= 10) {
+                    status = 'Stok Rendah';
+                    statusClass = 'status-low';
+                } else {
+                    status = 'Tersedia';
+                    statusClass = 'status-available';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>${product.stock}</td>
+                    <td>${formatCurrency(product.buyPrice)}</td>
+                    <td>${formatCurrency(product.sellPrice)}</td>
+                    <td><span class="status-badge ${statusClass}">${status}</span></td>
+                    <td>
+                        <button class="btn btn-small btn-secondary" onclick="editProduct(${product.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-small btn-danger" onclick="deleteProduct(${product.id})">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateSalesTable() {
+            const salesTable = document.getElementById('salesTable');
+            if (!salesTable) return;
+            
+            const tbody = salesTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            salesTransactions.forEach(sale => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(sale.date)}</td>
+                    <td>${sale.items.map(item => item.product).join(', ')}</td>
+                    <td>${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
+                    <td>${formatCurrency(sale.total)}</td>
+                    <td><span class="status-badge status-completed">Selesai</span></td>
+                    ${currentUser && currentUser.role !== 'kasir' ? `
+                    <td>
+                        <button class="btn btn-small btn-danger" onclick="deleteSale('${sale.id}')">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                    </td>
+                    ` : ''}
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateUsersTable() {
+            const usersTable = document.getElementById('usersTable');
+            if (!usersTable) return;
+            
+            const tbody = usersTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.fullName}</td>
+                    <td>${user.email}</td>
+                    <td><span class="user-role-badge role-${user.role}">${user.role}</span></td>
+                    <td><span class="status-badge ${user.status === 'active' ? 'status-available' : 'status-out'}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
+                    <td>
+                        <button class="btn btn-small btn-secondary" onclick="editUser(${user.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-small btn-danger" onclick="deleteUser(${user.id})">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Delete sale
+        async function deleteSale(id) {
+            if (!currentUser || currentUser.role === 'kasir') {
+                showNotification('Anda tidak memiliki izin untuk menghapus transaksi!', true);
+                return;
+            }
+            
+            const confirmDelete = confirm('Apakah Anda yakin ingin menghapus transaksi ini?');
+            if (!confirmDelete) return;
+            
+            // Delete from Firebase
+            const success = await deleteSalesFromFirebase(id);
+            
+            if (success) {
+                // Delete from local array
+                const index = salesTransactions.findIndex(sale => sale.id === id);
+                if (index !== -1) {
+                    salesTransactions.splice(index, 1);
+                    showNotification('Transaksi berhasil dihapus');
+                    updateSalesTable();
+                }
+            }
+        }
+        
+        // Reset all data
+        function resetAllData() {
+            if (!currentUser || currentUser.role !== 'owner') {
+                showNotification('Hanya owner yang dapat mereset data!', true);
+                return;
+            }
+            
+            const confirmReset = confirm('Apakah Anda yakin ingin mereset semua data? Tindakan ini tidak dapat dibatalkan!');
+            if (!confirmReset) return;
+            
+            purchaseOrders = [];
+            inventory = [];
+            salesTransactions = [];
+            incomeRecords = [];
+            expenseRecords = [];
+            utilityRecords = [];
+            suppliers = [];
+            
+            // Keep only the current user
+            users = users.filter(user => user.email === currentUser.email);
+            
+            // Clear localStorage
+            localStorage.removeItem('tokoAppData');
+            
+            showNotification('Semua data berhasil direset');
+            
+            // Update all tables and stats
+            updatePoTable();
+            updateSupplierTable();
+            updateStockTable();
+            updateSalesTable();
+            updateUsersTable();
+            updateAllStats();
+        }
+        
+        // Helper functions for finance calculations
+        function getTotalReceivables() {
+            // Placeholder - implement based on your business logic
+            return 0;
+        }
+        
+        function getTotalPayables() {
+            // Placeholder - implement based on your business logic
+            return 0;
+        }
+        
+        // Initialize the app
+        window.onload = function() {
+            // Set default tab
+            showTab('sales');
+        };
     </script>
 </body>
 </html>
